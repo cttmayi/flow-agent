@@ -10,16 +10,16 @@ async function main() {
 
   if (!command) {
     console.error('Usage:');
-    console.error('  node cli.js run <workflow-name>');
-    console.error('  node cli.js generate <filename> "<description>"');
-    console.error('  node cli.js generate-run <filename> "<description>"');
+    console.error('  flow-agent run <workflow-name>');
+    console.error('  flow-agent generate <filename> "<description>"');
+    console.error('  flow-agent generate-run <filename> "<description>"');
     process.exit(1);
   }
 
   if (command === 'run') {
     const name = args[0];
     if (!name) {
-      console.error('Usage: node cli.js run <workflow-name>');
+      console.error('Usage: flow-agent run <workflow-name>');
       process.exit(1);
     }
     const result = await engine.run(name);
