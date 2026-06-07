@@ -14,9 +14,15 @@ async function main() {
   // 加载 .flow-agent/config.yaml
   const config = await loadConfig();
 
-  // 从配置文件设置 API key（环境变量优先级更高）
-  if (config.anthropic_api_key && !process.env.ANTHROPIC_API_KEY) {
+  // 设置 API key：环境变量 > 配置文件 > 代理模式占位 key
+  if (process.env.ANTHROPIC_API_KEY) {
+    // 已设置，无需操作
+  } else if (config.anthropic_api_key &&
+             config.anthropic_api_key !== 'sk-ant-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx') {
     process.env.ANTHROPIC_API_KEY = config.anthropic_api_key;
+  } else {
+    // 代理模式：设一个占位 key 绕过 SDK 格式校验
+    process.env.ANTHROPIC_API_KEY = 'sk-ant-placeholder';
   }
 
   // 构造 agent 选项（传给 createAgent 和 executor）
