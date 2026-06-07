@@ -97,7 +97,6 @@ async function main() {
     await mkdir(workflowsDir, { recursive: true });
     const filePath = join(workflowsDir, `${name}.js`);
     await writeFile(filePath, clean, 'utf8');
-    logger.info(`Workflow saved to ${filePath}`);
 
     if (command === 'generate-run') {
       const result = await execute(clean, registry, agentOpts);
