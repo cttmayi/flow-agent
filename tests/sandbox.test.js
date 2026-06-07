@@ -16,22 +16,14 @@ describe('Sandbox', () => {
 
   it('does not expose require', async () => {
     const apis = { agent: async () => {}, parallel: async () => [], phase: () => {}, checkpoint: async () => {} };
-    try {
-      await createSandbox(`return typeof require;`, apis);
-      assert.fail('should have thrown');
-    } catch (e) {
-      assert.ok(true);
-    }
+    const result = await createSandbox(`return typeof require;`, apis);
+    assert.strictEqual(result, 'undefined');
   });
 
   it('does not expose process', async () => {
     const apis = { agent: async () => {}, parallel: async () => [], phase: () => {}, checkpoint: async () => {} };
-    try {
-      await createSandbox(`return typeof process;`, apis);
-      assert.fail('should have thrown');
-    } catch (e) {
-      assert.ok(true);
-    }
+    const result = await createSandbox(`return typeof process;`, apis);
+    assert.strictEqual(result, 'undefined');
   });
 
   it('executes basic JS operations', async () => {
