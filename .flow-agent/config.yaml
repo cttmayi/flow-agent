@@ -1,6 +1,8 @@
-# Flow Agent 配置文件
-# 设置 Anthropic API 密钥（优先级低于环境变量 ANTHROPIC_API_KEY）
-anthropic_api_key: "your-api-key-here"
+# Flow Agent 配置文件（编辑以下字段后即可使用）
+anthropic_api_key: "sk-ant-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+
+# API 地址（默认 Anthropic，可改为兼容端点）
+base_url: "https://api.anthropic.com"
 
 # 默认模型，agent() 未指定 model 时使用
 default_model: "claude-sonnet-4-20250514"

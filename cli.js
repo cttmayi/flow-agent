@@ -19,6 +19,13 @@ async function main() {
     process.env.ANTHROPIC_API_KEY = config.anthropic_api_key;
   }
 
+  // 构造 agent 选项（传给 createAgent 和 executor）
+  const agentOpts = {
+    baseURL: config.base_url,
+    defaultModel: config.default_model,
+    defaultTimeout: config.default_timeout,
+  };
+
   const [, , command, ...args] = process.argv;
 
   if (!command) {
@@ -44,7 +51,7 @@ async function main() {
     }
     const filePath = join(workflowsDir, `${name}.js`);
     const code = await readFile(filePath, 'utf8');
-    const result = await execute(code, registry);
+    const result = await execute(code, registry, agentOpts);
     logger.result(result);
     return;
   }
@@ -58,7 +65,7 @@ async function main() {
     }
 
     // Use agent to generate DSN-JS code
-    const agent = createAgent(registry);
+    const agent = createAgent(registry, agentOpts);
     const generated = await agent(
       `根据以下需求生成 DSN-JS 工作流代码（使用 agent、parallel、phase、checkpoint API）：
 ${description}
@@ -73,7 +80,7 @@ ${description}
     logger.info(`Workflow saved to ${filePath}`);
 
     if (command === 'generate-run') {
-      const result = await execute(generated.trim(), registry);
+      const result = await execute(generated.trim(), registry, agentOpts);
       logger.result(result);
     }
     return;
