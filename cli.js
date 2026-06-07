@@ -78,7 +78,10 @@ async function main() {
     const generatePromptTmpl = await readFile(join(__dirname, 'lib', 'prompts', 'dsnjs-generate.md'), 'utf8');
 
     const agent = createAgent(registry, { ...agentOpts, systemPrompt: DSN_JS_SYSTEM_PROMPT });
-    const generated = await agent(generatePromptTmpl.replace('{description}', description), { tools: ['bash', 'read'] });
+    const generated = await agent(
+      generatePromptTmpl.replace('{description}', description),
+      { tools: ['bash', 'read'], onProgress: (text) => console.log(`[generate] ${text}`) }
+    );
 
     // Strip markdown code block markers if present
     let clean = generated.trim();
