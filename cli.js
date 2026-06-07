@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 // cli.js
 import { readFile, writeFile, mkdir } from 'node:fs/promises';
-import { join } from 'node:path';
+import { join, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { execute } from './lib/executor.js';
 import { ToolRegistry } from './lib/tools/registry.js';
 import bashTool from './lib/tools/bash.js';
@@ -70,23 +71,29 @@ async function main() {
       process.exit(1);
     }
 
-    // Use agent to generate DSN-JS code
-    const agent = createAgent(registry, agentOpts);
-    const generated = await agent(
-      `根据以下需求生成 DSN-JS 工作流代码（使用 agent、parallel、phase、checkpoint API）：
-${description}
+    // Load system prompt from file
+    const __dirname = dirname(fileURLToPath(import.meta.url));
+    const DSN_JS_SYSTEM_PROMPT = await readFile(join(__dirname, 'lib', 'prompts', 'dsnjs-system.md'), 'utf8');
 
-输出格式要求：只输出 JavaScript 代码，不要包裹 markdown 代码块标记。`
-    );
+    const generatePromptTmpl = await readFile(join(__dirname, 'lib', 'prompts', 'dsnjs-generate.md'), 'utf8');
+
+    const agent = createAgent(registry, { ...agentOpts, systemPrompt: DSN_JS_SYSTEM_PROMPT });
+    const generated = await agent(generatePromptTmpl.replace('{description}', description));
+
+    // Strip markdown code block markers if present
+    let clean = generated.trim();
+    if (clean.startsWith('```')) {
+      clean = clean.replace(/^```[\w]*\n?/, '').replace(/\n?```$/, '');
+    }
 
     // Save file
     await mkdir(workflowsDir, { recursive: true });
     const filePath = join(workflowsDir, `${name}.js`);
-    await writeFile(filePath, generated.trim(), 'utf8');
+    await writeFile(filePath, clean, 'utf8');
     logger.info(`Workflow saved to ${filePath}`);
 
     if (command === 'generate-run') {
-      const result = await execute(generated.trim(), registry, agentOpts);
+      const result = await execute(clean, registry, agentOpts);
       logger.result(result);
     }
     return;
