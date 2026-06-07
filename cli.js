@@ -1,16 +1,13 @@
 #!/usr/bin/env node
 // cli.js
 import { readFile, writeFile, mkdir } from 'node:fs/promises';
-import { join, dirname } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { join } from 'node:path';
 import { execute } from './lib/executor.js';
 import { ToolRegistry } from './lib/tools/registry.js';
 import bashTool from './lib/tools/bash.js';
 import readTool from './lib/tools/read.js';
 import { createAgent } from './lib/api/agent.js';
 import { logger } from './lib/logger.js';
-
-const __dirname = dirname(fileURLToPath(import.meta.url));
 
 async function main() {
   const [, , command, ...args] = process.argv;
