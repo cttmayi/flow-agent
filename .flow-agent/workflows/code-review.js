@@ -6,7 +6,7 @@
 try {
   phase("diff 分析");
   const diff = await agent(
-    `当前工作目录是 ${cwd}。请在此目录下执行 git diff 获取与主分支的代码变更，分析变更范围、涉及的文件和行数。注意：不要 cd 到其他目录。`,
+    '直接在 bash 中执行 git diff 获取与主分支的代码变更（不要 cd），分析变更范围、涉及的文件和行数',
     { tools: ["bash"] }
   );
 
