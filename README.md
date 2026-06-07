@@ -7,7 +7,7 @@
 ```
 flow-agent/
 ├── .flow-agent/
-│   ├── config.yaml             — API Key、Base URL、默认模型等配置
+│   ├── config.yaml.example     — 配置文件模板（复制为 config.yaml 使用）
 │   └── workflows/              — DSN‑JS 工作流存放目录
 ├── lib/
 │   ├── prompts/                — 独立的 system prompt 模板文件
@@ -76,14 +76,22 @@ node cli.js generate-run <name> "<description>"
 
 ## 配置文件
 
-`.flow-agent/config.yaml`：
+`.flow-agent/config.yaml.example`：
 
 ```yaml
-anthropic_api_key: "sk-ant-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+anthropic_api_key: "YOUR_API_KEY_HERE"
 base_url: "http://127.0.0.1:8080"
 default_model: "default"
 default_timeout: 120000
 ```
+
+首次使用请复制模板：
+
+```bash
+cp .flow-agent/config.yaml.example .flow-agent/config.yaml
+```
+
+> **安全提醒**：`.flow-agent/config.yaml` 已在 `.gitignore` 中，不会被提交。推荐通过 `ANTHROPIC_API_KEY` 环境变量传递密钥。
 
 ## 环境变量
 
