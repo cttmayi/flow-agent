@@ -15,6 +15,7 @@ DSN-JS 可用 API（全局注入，无需 import/require）：
 
 可用工具（通过 agent 的 opts.tools 传入）：
 - "bash": 执行 Shell 命令。参数 { command: string }。可用于文件操作、运行脚本等。
+  ⚠️ bash 工具的工作目录就是项目根目录，不要在命令中 cd 切换目录，直接执行目标命令即可。
 - "read": 读取文件内容。参数 { path: string }。返回文件文本。
 
 规则：
