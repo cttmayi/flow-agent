@@ -1,0 +1,16 @@
+{
+  "name": "flow-agent",
+  "version": "1.0.0",
+  "description": "DSN-JS Dynamic Workflow Agent Runtime",
+  "type": "module",
+  "main": "runtime.js",
+  "bin": {
+    "flow-agent": "./cli.js"
+  },
+  "scripts": {
+    "test": "node --test tests/*.test.js"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.39.0"
+  }
+}
