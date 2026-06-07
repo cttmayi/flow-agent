@@ -59,7 +59,7 @@ flow-agent/
 | 工具 | 名称 | 参数 | 用途 |
 |------|------|------|------|
 | bash | `"bash"` | `{ command: string }` | 执行 Shell 命令 |
-| read | `"read"` | `{ path: string }` | 读取文件内容 |
+| read | `"read"` | `{ path: string }` | 读取文件内容或列出目录 |
 
 工作流代码**禁止直接操作外围环境**（文件系统、进程、网络等），所有与外围环境的交互必须通过 agent 工具完成。沙箱中不注入 `fs`/`path` 等模块。
 

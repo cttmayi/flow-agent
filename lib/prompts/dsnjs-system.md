@@ -6,7 +6,7 @@
 
 可用工具（通过 agent 的 opts.tools 传入）：
 - "bash": 执行 Shell 命令。参数 { command: string }。工作目录固定为项目根目录。
-- "read": 读取文件内容。参数 { path: string }。返回文件文本。
+- "read": 读取文件内容或列出目录内容。参数 { path: string }。如果 path 是目录则返回目录列表（每行一项），如果 path 是文件则返回文件文本。
 
 注意：agent() 收到的指令由执行 LLM 理解，而 LLM 可能自行猜测路径并生成 cd 命令。因此发给 agent() 的 bash 指令必须显式要求 LLM 不要切换目录，直接执行目标命令。
 
