@@ -43,13 +43,13 @@ flow-agent/
 
 ```bash
 # 执行已有工作流
-node runtime.js run security-audit
+node cli.js run security-audit
 
 # 生成 DSN‑JS 工作流文件
-node runtime.js generate security-audit "审计项目代码安全"
+node cli.js generate security-audit "审计项目代码安全"
 
 # 生成并立即执行
-node runtime.js generate-run security-audit "审计项目代码安全"
+node cli.js generate-run security-audit "审计项目代码安全"
 ```
 
 ## 环境变量
