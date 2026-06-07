@@ -2,6 +2,15 @@
 
 基于 Node.js `vm` 沙箱和 Anthropic SDK 的 DSN‑JS 运行时，支持安全隔离的工作流执行。
 
+## 安装
+
+```bash
+# 全局注册 flow-agent 命令
+npm link
+# 或手动创建软链：
+# ln -s "$PWD/cli.js" ~/.local/bin/flow-agent
+```
+
 ## 目录结构
 
 ```
@@ -66,13 +75,13 @@ flow-agent/
 
 ```bash
 # 执行已有工作流
-node cli.js run <workflow-name>
+flow-agent run <workflow-name>
 
 # 生成 DSN‑JS 工作流文件
-node cli.js generate <name> "<description>"
+flow-agent generate <name> "<description>"
 
 # 生成并立即执行
-node cli.js generate-run <name> "<description>"
+flow-agent generate-run <name> "<description>"
 ```
 
 ## 配置文件
@@ -96,7 +105,7 @@ cp .flow-agent/config.yaml.example .flow-agent/config.yaml
 
 ## 环境变量
 
-- `ANTHROPIC_API_KEY` — 优先级高于配置文件
+- `ANTHROPIC_API_KEY` — 可覆盖 config.yaml 中的设置（config.yaml 优先级更高）
 
 ## 限制
 
