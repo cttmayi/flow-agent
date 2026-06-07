@@ -1,4 +1,5 @@
-// runtime.js
+// runtime.js — 模块入口
+export { createEngine } from './lib/engine.js';
 export { execute } from './lib/executor.js';
 export { ToolRegistry } from './lib/tools/registry.js';
 export { createAgent } from './lib/api/agent.js';

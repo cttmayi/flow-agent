@@ -10,6 +10,7 @@ flow-agent/
 │   ├── config.yaml.example     — 配置文件模板（复制为 config.yaml 使用）
 │   └── workflows/              — DSN‑JS 工作流存放目录
 ├── lib/
+│   ├── engine.js               — 核心引擎（createEngine），封装运行时与 CLI/Web 共用逻辑
 │   ├── prompts/                — 独立的 system prompt 模板文件
 │   ├── sandbox.js              — vm 沙箱（仅注入 agent/parallel/phase/checkpoint）
 │   ├── cache.js                — 内存缓存
@@ -18,7 +19,7 @@ flow-agent/
 │   ├── config.js               — YAML 配置加载
 │   ├── tools/                  — 工具注册表与内置工具（bash、read）
 │   └── api/                    — 四大 API 实现
-├── cli.js                      — CLI 入口
+├── cli.js                      — CLI 入口（薄层封装，实际逻辑在 lib/engine.js）
 ├── runtime.js                  — 模块入口
 └── README.md
 ```
