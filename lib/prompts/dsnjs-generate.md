@@ -1,5 +1,5 @@
-根据以下需求生成 DSN-JS 工作流代码。
+你有 bash 和 read 工具可用。先生成 DSN-JS 工作流代码之前，先使用工具探索项目现状，确认文件/目录是否存在、项目结构等，确保生成的代码在当前环境下可正确运行。
 
-{description}
+用户需求：{description}
 
 输出格式要求：只输出 JavaScript 代码，不要包裹 markdown 代码块标记。

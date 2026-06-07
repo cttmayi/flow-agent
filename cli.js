@@ -78,11 +78,15 @@ async function main() {
     const generatePromptTmpl = await readFile(join(__dirname, 'lib', 'prompts', 'dsnjs-generate.md'), 'utf8');
 
     const agent = createAgent(registry, { ...agentOpts, systemPrompt: DSN_JS_SYSTEM_PROMPT });
-    const generated = await agent(generatePromptTmpl.replace('{description}', description));
+    const generated = await agent(generatePromptTmpl.replace('{description}', description), { tools: ['bash', 'read'] });
 
     // Strip markdown code block markers if present
     let clean = generated.trim();
-    if (clean.startsWith('```')) {
+    // Extract content from markdown code blocks even if there's text before/after
+    const codeBlockMatch = clean.match(/```[\w]*\n?([\s\S]*?)```/);
+    if (codeBlockMatch) {
+      clean = codeBlockMatch[1].trim();
+    } else if (clean.startsWith('```')) {
       clean = clean.replace(/^```[\w]*\n?/, '').replace(/\n?```$/, '');
     }
 
