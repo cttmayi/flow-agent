@@ -8,8 +8,17 @@ import bashTool from './lib/tools/bash.js';
 import readTool from './lib/tools/read.js';
 import { createAgent } from './lib/api/agent.js';
 import { logger } from './lib/logger.js';
+import { loadConfig } from './lib/config.js';
 
 async function main() {
+  // 加载 .flow-agent/config.yaml
+  const config = await loadConfig();
+
+  // 从配置文件设置 API key（环境变量优先级更高）
+  if (config.anthropic_api_key && !process.env.ANTHROPIC_API_KEY) {
+    process.env.ANTHROPIC_API_KEY = config.anthropic_api_key;
+  }
+
   const [, , command, ...args] = process.argv;
 
   if (!command) {
