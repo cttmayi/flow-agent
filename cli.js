@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 // cli.js — CLI 入口，薄层封装
 import { createEngine } from './lib/engine.js';
+import { createServer_ } from './lib/serve.js';
 import { logger } from './lib/logger.js';
 
 async function main() {
@@ -45,6 +46,14 @@ async function main() {
       const result = await engine.execute(code);
       logger.result(result);
     }
+    return;
+  }
+
+  if (command === 'serve') {
+    const portArg = args[0] ? parseInt(args[0], 10) : undefined;
+    const server = await createServer_({ port: portArg });
+    // Keep running until SIGINT
+    await new Promise(() => {});
     return;
   }
 
