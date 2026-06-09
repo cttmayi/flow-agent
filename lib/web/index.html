@@ -83,7 +83,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; h
 
 <div class="main">
   <div class="top-bar" id="topBar" style="display:none">
-    <span class="wf-name" id="wfName"><span class="ext"></span></span>
+    <span class="wf-name" id="wfName"></span>
     <button class="btn btn-primary" onclick="runWorkflow()">执行</button>
     <button class="btn btn-code" onclick="showCode()">查看代码</button>
   </div>
@@ -126,7 +126,13 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; h
 // === State ===
 let workflows = [];
 let activeWorkflow = null;
-let loading = false;
+let loadingMessages = false;
+let loadingSend = false;
+let loadingRun = false;
+
+function escapeHTML(str) {
+  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
 
 // === API Helpers ===
 async function api(path, opts = {}) {
@@ -141,29 +147,42 @@ async function api(path, opts = {}) {
 
 // === Sidebar ===
 async function loadWorkflows() {
+  try {
+    workflows = await api('/api/workflows');
+  } catch {
+    return;
+  }
   const list = document.getElementById('workflowList');
-  workflows = await api('/api/workflows');
-  list.innerHTML = workflows.map(w =>
-    `<div class="workflow-item${w === activeWorkflow ? ' active' : ''}" onclick="selectWorkflow('${w}')">${w}</div>`
-  ).join('');
+  list.innerHTML = '';
+  for (const w of workflows) {
+    const item = document.createElement('div');
+    item.className = 'workflow-item' + (w === activeWorkflow ? ' active' : '');
+    item.textContent = w;
+    item.addEventListener('click', () => selectWorkflow(w));
+    list.appendChild(item);
+  }
 }
 
 function selectWorkflow(name) {
   activeWorkflow = name;
+  loadingMessages = name;
   document.querySelectorAll('.workflow-item').forEach(el => el.classList.remove('active'));
   document.querySelectorAll('.workflow-item').forEach(el => {
     if (el.textContent === name) el.classList.add('active');
   });
   document.getElementById('topBar').style.display = 'flex';
   document.getElementById('inputBar').style.display = 'flex';
-  document.getElementById('wfName').innerHTML = `${name}<span class="ext">.js</span>`;
+  document.getElementById('wfName').textContent = name + '.js';
   loadMessages(name);
 }
 
 async function loadMessages(name) {
   const area = document.getElementById('chatArea');
   area.innerHTML = '<div class="empty-state" style="display:none"></div>';
+  loadingMessages = true;
   const { messages } = await api(`/api/workflows/${name}/messages`);
+  if (loadingMessages !== name) return; // stale response
+  loadingMessages = false;
   messages.forEach(m => appendMessage(m.role, m.content, false));
   area.scrollTop = area.scrollHeight;
 }
@@ -174,8 +193,9 @@ function appendMessage(role, content, doScroll = true) {
   const empty = document.getElementById('emptyState');
   if (empty) empty.style.display = 'none';
 
-  // Format code blocks in content
-  const formatted = content.replace(/```(\w*)\n?([\s\S]*?)```/g, '<pre><code>$2</code></pre>');
+  // Escape HTML first, then convert code fences to <pre><code>
+  const escaped = escapeHTML(content);
+  const formatted = escaped.replace(/```(\w*)\n?([\s\S]*?)```/g, '<pre><code>$2</code></pre>');
 
   const div = document.createElement('div');
   div.className = `chat-msg ${role}`;
@@ -188,10 +208,10 @@ async function sendMessage() {
   const input = document.getElementById('chatInput');
   const btn = document.getElementById('sendBtn');
   const text = input.value.trim();
-  if (!text || loading) return;
+  if (!text || loadingSend) return;
 
   input.value = '';
-  loading = true;
+  loadingSend = true;
   btn.disabled = true;
 
   appendMessage('user', text);
@@ -203,9 +223,9 @@ async function sendMessage() {
     });
     appendMessage('assistant', data.reply);
   } catch (err) {
-    appendMessage('assistant', `错误：${err.message}`);
+    appendMessage('assistant', `错误：${escapeHTML(err.message)}`);
   } finally {
-    loading = false;
+    loadingSend = false;
     btn.disabled = false;
     input.focus();
   }
@@ -220,8 +240,8 @@ function onInputKeydown(e) {
 
 // === Execute ===
 async function runWorkflow() {
-  if (!activeWorkflow || loading) return;
-  loading = true;
+  if (!activeWorkflow || loadingRun) return;
+  loadingRun = true;
   document.getElementById('sendBtn').disabled = true;
 
   appendMessage('user', `执行 workflow "${activeWorkflow}"`);
@@ -230,9 +250,9 @@ async function runWorkflow() {
     const data = await api(`/api/workflows/${activeWorkflow}/run`, { method: 'POST' });
     appendMessage('assistant', `执行完成。\n\n\`\`\`\n${data.result}\n\`\`\``);
   } catch (err) {
-    appendMessage('assistant', `执行失败：${err.message}`);
+    appendMessage('assistant', `执行失败：${escapeHTML(err.message)}`);
   } finally {
-    loading = false;
+    loadingRun = false;
     document.getElementById('sendBtn').disabled = false;
   }
 }
@@ -270,15 +290,33 @@ async function createWorkflow() {
 // === Code Viewer ===
 async function showCode() {
   if (!activeWorkflow) return;
-  const data = await api(`/api/workflows/${activeWorkflow}`);
-  document.getElementById('codeViewerTitle').textContent = `${activeWorkflow}.js`;
-  document.getElementById('codeViewerContent').textContent = data.code;
-  document.getElementById('codeViewer').classList.add('show');
+  try {
+    const data = await api(`/api/workflows/${activeWorkflow}`);
+    document.getElementById('codeViewerTitle').textContent = `${activeWorkflow}.js`;
+    document.getElementById('codeViewerContent').textContent = data.code;
+    document.getElementById('codeViewer').classList.add('show');
+  } catch (err) {
+    appendMessage('assistant', `加载代码失败：${escapeHTML(err.message)}`);
+  }
 }
 
 function closeCodeViewer() {
   document.getElementById('codeViewer').classList.remove('show');
 }
+
+// === Modal overlay click-to-close ===
+document.getElementById('newModal').addEventListener('click', function(e) {
+  if (e.target === this) closeNewModal();
+});
+document.getElementById('codeViewer').addEventListener('click', function(e) {
+  if (e.target === this) closeCodeViewer();
+});
+
+// === Textarea auto-resize ===
+document.getElementById('chatInput').addEventListener('input', function() {
+  this.style.height = 'auto';
+  this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+});
 
 // === Init ===
 loadWorkflows();
