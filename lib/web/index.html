@@ -196,6 +196,16 @@ function appendMessage(role, content, doScroll = true) {
   const empty = document.getElementById('emptyState');
   if (empty) empty.style.display = 'none';
 
+  // content may be a content block array from tool_use loop; extract text blocks
+  if (Array.isArray(content)) {
+    // Skip messages that contain tool_use blocks (intermediate assistant responses)
+    if (content.some(b => b.type === 'tool_use')) return;
+    content = content.filter(b => b.type === 'text').map(b => b.text).join('\n');
+  }
+
+  // Skip empty messages (tool results, etc.)
+  if (!content || !content.trim()) return;
+
   // Escape HTML first, then convert code fences to <pre><code>
   const escaped = escapeHTML(content);
   const formatted = escaped.replace(/```(\w*)\n?([\s\S]*?)```/g, '<pre><code>$2</code></pre>');
@@ -235,7 +245,7 @@ async function sendMessage() {
 }
 
 function onInputKeydown(e) {
-  if (e.key === 'Enter' && !e.shiftKey) {
+  if (e.key === 'Enter' && !e.shiftKey && !e.isComposing && e.keyCode !== 229) {
     e.preventDefault();
     sendMessage();
   }
@@ -251,7 +261,7 @@ async function runWorkflow() {
 
   try {
     const data = await api(`/api/workflows/${encodeURIComponent(activeWorkflow)}/run`, { method: 'POST' });
-    appendMessage('assistant', `执行完成。\n\n\`\`\`\n${data.result}\n\`\`\``);
+    appendMessage('assistant', `执行完成。\n\n\`\`\`\n${data.result || '(无返回结果)'}\n\`\`\``);
   } catch (err) {
     appendMessage('assistant', `执行失败：${escapeHTML(err.message)}`);
   } finally {
