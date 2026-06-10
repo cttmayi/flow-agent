@@ -11,6 +11,7 @@
 ## API 说明
 
 - agent(prompt, opts?) — 调用 AI agent，返回文本结果。opts 可指定 model、tools（工具名称数组）、timeout。
+  - model 只能省略（使用默认模型）或设为有效的 claude 模型（如 claude-sonnet-4-20250514），禁止设为不存在的模型名。
 - parallel(tasks, opts?) — 并行执行 async 函数数组。opts 支持 concurrency（默认 5）和 failFast（默认 true）。
 - phase(name) — 标记工作流阶段，仅用于日志输出。
 - checkpoint(key, value?) — 一个参数读取缓存；两个参数写入缓存并返回值。
