@@ -11,6 +11,8 @@
     "test": "node --test tests/*.test.js"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.39.0"
+    "@anthropic-ai/sdk": "^0.39.0",
+    "highlight.js": "^11.11.1",
+    "marked": "^18.0.5"
   }
 }

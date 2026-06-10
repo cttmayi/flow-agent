@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>flow-agent</title>
+<link rel="stylesheet" href="/highlight.css">
 <style>
 /* Layout */
 * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -33,11 +34,17 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; h
 
 /* Chat */
 .chat-area { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 12px; }
-.chat-msg { max-width: 80%; padding: 10px 14px; border-radius: 8px; font-size: 14px; line-height: 1.5; white-space: pre-wrap; word-break: break-word; }
+.chat-msg { max-width: 80%; padding: 10px 14px; border-radius: 8px; font-size: 14px; line-height: 1.6; word-break: break-word; }
 .chat-msg.user { align-self: flex-end; background: #e94560; color: white; }
 .chat-msg.assistant { align-self: flex-start; background: #16213e; border: 1px solid #0f3460; }
+.chat-msg p { margin: 4px 0; }
+.chat-msg h1, .chat-msg h2, .chat-msg h3 { margin: 8px 0 4px; }
+.chat-msg ul, .chat-msg ol { margin: 4px 0; padding-left: 20px; }
+.chat-msg li { margin: 2px 0; }
 .chat-msg code { background: rgba(0,0,0,0.3); padding: 1px 4px; border-radius: 3px; font-size: 13px; }
 .chat-msg pre { background: rgba(0,0,0,0.3); padding: 8px; border-radius: 4px; margin: 4px 0; overflow-x: auto; }
+.chat-msg a { color: #4fc3f7; }
+.chat-msg strong { font-weight: 600; }
 
 /* Input */
 .input-bar { padding: 12px 16px; background: #16213e; border-top: 1px solid #0f3460; display: flex; gap: 8px; }
@@ -122,8 +129,9 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; h
   </div>
 </div>
 
+<script src="/marked.min.js"></script>
+<script src="/highlight.min.js"></script>
 <script>
-// === State ===
 let workflows = [];
 let activeWorkflow = null;
 let loadingMessages = false;
@@ -206,13 +214,18 @@ function appendMessage(role, content, doScroll = true) {
   // Skip empty messages (tool results, etc.)
   if (!content || !content.trim()) return;
 
-  // Escape HTML first, then convert code fences to <pre><code>
-  const escaped = escapeHTML(content);
-  const formatted = escaped.replace(/```(\w*)\n?([\s\S]*?)```/g, '<pre><code>$2</code></pre>');
+  // Escape HTML, then render markdown via marked
+  const formatted = marked.parse(escapeHTML(content), { breaks: true });
 
   const div = document.createElement('div');
   div.className = `chat-msg ${role}`;
   div.innerHTML = formatted;
+
+  // Highlight code blocks with hljs
+  div.querySelectorAll('pre code').forEach(block => {
+    hljs.highlightElement(block);
+  });
+
   area.appendChild(div);
   if (doScroll) area.scrollTop = area.scrollHeight;
 }
@@ -261,7 +274,7 @@ async function runWorkflow() {
 
   try {
     const data = await api(`/api/workflows/${encodeURIComponent(activeWorkflow)}/run`, { method: 'POST' });
-    appendMessage('assistant', `执行完成。\n\n\`\`\`\n${data.result || '(无返回结果)'}\n\`\`\``);
+    appendMessage('assistant', `\`\`\`\n${data.result || '(无返回结果)'}\n\`\`\``);
   } catch (err) {
     appendMessage('assistant', `执行失败：${escapeHTML(err.message)}`);
   } finally {
