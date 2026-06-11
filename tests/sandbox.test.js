@@ -14,10 +14,16 @@ describe('Sandbox', () => {
     assert.strictEqual(result, 'mock-agent');
   });
 
-  it('does not expose require', async () => {
+  it('does not expose require without workflowDir', async () => {
     const apis = { agent: async () => {}, parallel: async () => [], phase: () => {}, checkpoint: async () => {} };
     const result = await createSandbox(`return typeof require;`, apis);
     assert.strictEqual(result, 'undefined');
+  });
+
+  it('exposes require when workflowDir is provided', async () => {
+    const apis = { agent: async () => {}, parallel: async () => [], phase: () => {}, checkpoint: async () => {} };
+    const result = await createSandbox(`return typeof require;`, apis, 60000, '/tmp');
+    assert.strictEqual(result, 'function');
   });
 
   it('does not expose process', async () => {

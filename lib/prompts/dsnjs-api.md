@@ -15,3 +15,9 @@
 - parallel(tasks, opts?) — 并行执行 async 函数数组。opts 支持 concurrency（默认 5）和 failFast（默认 true）。
 - phase(name) — 标记工作流阶段，仅用于日志输出。
 - checkpoint(key, value?) — 一个参数读取缓存；两个参数写入缓存并返回值。
+- require(modulePath) — 加载同一 workflow 目录下的本地模块。modulePath 必须是相对路径。
+  - 加载 `.js` 文件，在同一沙箱上下文中执行。
+  - 加载 `.json` 文件，返回 parsed 对象。
+  - 加载其他文件，返回文件文本内容。
+  - 支持模块缓存，多次 require 同一模块返回同一实例。
+  - 示例：`const helper = require('./libs/helper.js');`

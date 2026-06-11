@@ -64,11 +64,31 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; h
 .modal textarea { min-height: 80px; }
 .modal-actions { display: flex; gap: 8px; justify-content: flex-end; }
 
-/* Code viewer */
-.code-viewer { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); align-items: center; justify-content: center; z-index: 100; }
-.code-viewer.show { display: flex; }
-.code-viewer .modal { width: 700px; max-width: 90vw; max-height: 80vh; }
-.code-viewer pre { background: #1a1a2e; padding: 12px; border-radius: 4px; overflow: auto; max-height: 60vh; font-size: 13px; line-height: 1.6; }
+/* Divider */
+.divider { width: 5px; cursor: col-resize; background: #0f3460; flex-shrink: 0; position: relative; z-index: 10; display: none; }
+.divider.show { display: block; }
+.divider:hover, .divider.active { background: #e94560; }
+
+/* Code panel */
+.code-panel { width: 0; overflow: hidden; background: #111827; border-left: 1px solid #0f3460; display: flex; flex-direction: column; }
+.code-panel.open { width: 480px; }
+.code-panel.open.transition { transition: width 0.2s; }
+.code-panel-header { padding: 8px 12px; border-bottom: 1px solid #0f3460; display: flex; align-items: center; gap: 8px; font-size: 13px; }
+.code-panel-header .cp-name { flex: 1; font-weight: 600; }
+.code-panel-header .cp-name .ext { color: #666; font-weight: normal; }
+.code-panel-body { flex: 1; overflow: auto; padding: 0; }
+.code-panel-body pre { margin: 0; padding: 12px; font-size: 13px; line-height: 1.6; }
+.code-panel-body code { background: transparent; padding: 0; font-size: 13px; white-space: pre-wrap; word-break: break-all; }
+.code-panel-files { border-bottom: 1px solid #0f3460; overflow-y: auto; padding: 2px 0; font-size: 12px; }
+.cp-file { padding: 2px 8px 2px 12px; cursor: pointer; color: #aaa; white-space: nowrap; display: flex; align-items: center; gap: 3px; }
+.cp-file:hover { background: rgba(255,255,255,0.05); color: #e0e0e0; }
+.cp-file.active { background: rgba(233,69,96,0.15); color: #e94560; }
+.cp-file .arrow { display: inline-block; width: 12px; text-align: center; flex-shrink: 0; font-size: 10px; color: #666; }
+.cp-file .icon { flex-shrink: 0; }
+.cp-file.dir { cursor: pointer; }
+.cp-file.dir .arrow { color: #888; }
+.cp-children { overflow: hidden; }
+.cp-children.collapsed { display: none; }
 
 /* Empty state */
 .empty-state { flex: 1; display: flex; align-items: center; justify-content: center; color: #555; font-size: 14px; }
@@ -92,7 +112,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; h
   <div class="top-bar" id="topBar" style="display:none">
     <span class="wf-name" id="wfName"></span>
     <button class="btn btn-primary" onclick="runWorkflow()">执行</button>
-    <button class="btn btn-code" onclick="showCode()">查看代码</button>
+    <button class="btn btn-code" onclick="toggleCodePanel()">查看代码</button>
   </div>
   <div class="chat-area" id="chatArea">
     <div class="empty-state" id="emptyState">选择一个 workflow 开始</div>
@@ -100,6 +120,21 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; h
   <div class="input-bar" id="inputBar" style="display:none">
     <textarea id="chatInput" rows="1" placeholder="输入指令修改 workflow..." onkeydown="onInputKeydown(event)"></textarea>
     <button class="btn-send" id="sendBtn" onclick="sendMessage()">发送</button>
+  </div>
+</div>
+
+<!-- Divider -->
+<div class="divider" id="divider"></div>
+
+<!-- Code Panel -->
+<div class="code-panel" id="codePanel">
+  <div class="code-panel-header">
+    <span class="cp-name" id="cpName"><span class="ext">代码</span></span>
+    <button class="btn" onclick="toggleCodePanel()">关闭</button>
+  </div>
+  <div class="code-panel-files" id="cpFileList"></div>
+  <div class="code-panel-body">
+    <pre><code id="cpContent" class="language-javascript"></code></pre>
   </div>
 </div>
 
@@ -114,17 +149,6 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; h
     <div class="modal-actions">
       <button class="btn" onclick="closeNewModal()">取消</button>
       <button class="btn btn-primary" onclick="createWorkflow()">创建</button>
-    </div>
-  </div>
-</div>
-
-<!-- Code Viewer -->
-<div class="code-viewer" id="codeViewer">
-  <div class="modal">
-    <h2 id="codeViewerTitle">代码</h2>
-    <pre id="codeViewerContent"></pre>
-    <div class="modal-actions">
-      <button class="btn" onclick="closeCodeViewer()">关闭</button>
     </div>
   </div>
 </div>
@@ -144,10 +168,11 @@ function escapeHTML(str) {
 
 // === API Helpers ===
 async function api(path, opts = {}) {
-  const res = await fetch(path, {
-    headers: { 'Content-Type': 'application/json' },
-    ...opts,
-  });
+  const headers = { ...opts.headers };
+  if (opts.method && opts.method !== 'GET') {
+    headers['Content-Type'] = 'application/json';
+  }
+  const res = await fetch(path, { ...opts, headers });
   const data = await res.json();
   if (!res.ok) throw new Error(data.error || 'Request failed');
   return data;
@@ -180,7 +205,15 @@ function selectWorkflow(name) {
   });
   document.getElementById('topBar').style.display = 'flex';
   document.getElementById('inputBar').style.display = 'flex';
-  document.getElementById('wfName').textContent = name + '.js';
+  document.getElementById('wfName').textContent = name;
+  // Reset code panel
+  const panel = document.getElementById('codePanel');
+  panel.classList.remove('open', 'transition');
+  panel.style.width = '';
+  document.getElementById('divider').classList.remove('show');
+  codePanelOpen = false;
+  codePanelFiles = [];
+  cpCurrentFile = 'main.js';
   loadMessages(name);
 }
 
@@ -197,6 +230,13 @@ async function loadMessages(name) {
     if (loadingMessages === name) loadingMessages = false;
   }
 }
+
+// === Marked config: disable raw HTML for XSS safety ===
+marked.use({
+  renderer: {
+    html(token) { return escapeHTML(token.text || token.raw || ''); }
+  }
+});
 
 // === Chat ===
 function appendMessage(role, content, doScroll = true) {
@@ -215,7 +255,7 @@ function appendMessage(role, content, doScroll = true) {
   if (!content || !content.trim()) return;
 
   // Escape HTML, then render markdown via marked
-  const formatted = marked.parse(escapeHTML(content), { breaks: true });
+  const formatted = marked.parse(content, { breaks: true, gfm: true });
 
   const div = document.createElement('div');
   div.className = `chat-msg ${role}`;
@@ -274,7 +314,7 @@ async function runWorkflow() {
 
   try {
     const data = await api(`/api/workflows/${encodeURIComponent(activeWorkflow)}/run`, { method: 'POST' });
-    appendMessage('assistant', `\`\`\`\n${data.result || '(无返回结果)'}\n\`\`\``);
+    appendMessage('assistant', data.result || '(无返回结果)');
   } catch (err) {
     appendMessage('assistant', `执行失败：${escapeHTML(err.message)}`);
   } finally {
@@ -313,35 +353,192 @@ async function createWorkflow() {
   }
 }
 
-// === Code Viewer ===
-async function showCode() {
-  if (!activeWorkflow) return;
-  try {
-    const data = await api(`/api/workflows/${encodeURIComponent(activeWorkflow)}`);
-    document.getElementById('codeViewerTitle').textContent = `${activeWorkflow}.js`;
-    document.getElementById('codeViewerContent').textContent = data.code;
-    document.getElementById('codeViewer').classList.add('show');
-  } catch (err) {
-    appendMessage('assistant', `加载代码失败：${escapeHTML(err.message)}`);
-  }
+// === Code Panel ===
+let codePanelOpen = false;
+let codePanelFiles = [];
+let cpCurrentFile = 'main.js';
+
+function highlightCode(el) {
+  delete el.dataset.highlighted;
+  hljs.highlightElement(el);
 }
 
-function closeCodeViewer() {
-  document.getElementById('codeViewer').classList.remove('show');
+async function loadCpFile(filePath) {
+  const codeEl = document.getElementById('cpContent');
+  const ext = filePath.endsWith('.json') ? 'json' : 'javascript';
+  codeEl.className = `language-${ext}`;
+  try {
+    let content;
+    if (codePanelFiles.length > 0) {
+      // Directory workflow: load specific file
+      const data = await api(`/api/workflows/${encodeURIComponent(activeWorkflow)}/file/${filePath}`);
+      content = data.content;
+    } else {
+      // Single-file workflow: load main code
+      const data = await api(`/api/workflows/${encodeURIComponent(activeWorkflow)}`);
+      content = data.code;
+    }
+    codeEl.textContent = content;
+  } catch {
+    codeEl.textContent = '(加载失败)';
+  }
+  highlightCode(codeEl);
+  document.querySelectorAll('.cp-file').forEach(el => {
+    el.classList.toggle('active', el.dataset.path === filePath);
+  });
+  cpCurrentFile = filePath;
+}
+
+async function populateCpFileList() {
+  const list = document.getElementById('cpFileList');
+  try {
+    const data = await api(`/api/workflows/${encodeURIComponent(activeWorkflow)}/files`);
+    codePanelFiles = data.files || [];
+  } catch {
+    codePanelFiles = [];
+  }
+  list.innerHTML = '';
+  if (codePanelFiles.length === 0) {
+    const item = document.createElement('div');
+    item.className = 'cp-file active';
+    item.textContent = 'main.js';
+    list.appendChild(item);
+    return;
+  }
+
+  // Build tree from flat paths
+  const tree = {};
+  for (const f of codePanelFiles) {
+    const parts = f.split('/');
+    let node = tree;
+    for (const p of parts) {
+      if (!node[p]) node[p] = {};
+      node = node[p];
+    }
+    node._file = true;
+  }
+
+  function renderNode(node, parentEl, depth, prefix) {
+    const keys = Object.keys(node).filter(k => k !== '_file').sort();
+    for (const key of keys) {
+      const isDir = !node[key]._file;
+      const fullPath = prefix ? prefix + '/' + key : key;
+      const row = document.createElement('div');
+      row.className = 'cp-file' + (isDir ? ' dir' : '');
+      row.style.paddingLeft = (12 + depth * 16) + 'px';
+      row.dataset.path = fullPath;
+
+      if (isDir) {
+        const arrow = document.createElement('span');
+        arrow.className = 'arrow';
+        arrow.textContent = '▶';
+        row.appendChild(arrow);
+        const icon = document.createElement('span');
+        icon.className = 'icon';
+        icon.textContent = '📁';
+        row.appendChild(icon);
+        const label = document.createElement('span');
+        label.textContent = key;
+        row.appendChild(label);
+
+        const children = document.createElement('div');
+        children.className = 'cp-children collapsed';
+
+        row.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const isCollapsed = children.classList.toggle('collapsed');
+          arrow.textContent = isCollapsed ? '▶' : '▼';
+        });
+
+        parentEl.appendChild(row);
+        parentEl.appendChild(children);
+        renderNode(node[key], children, depth + 1, fullPath);
+      } else {
+        const arrow = document.createElement('span');
+        arrow.className = 'arrow';
+        arrow.innerHTML = '&nbsp;&nbsp;';
+        row.appendChild(arrow);
+        const icon = document.createElement('span');
+        icon.className = 'icon';
+        icon.textContent = '📄';
+        row.appendChild(icon);
+        const label = document.createElement('span');
+        label.textContent = key;
+        row.appendChild(label);
+
+        row.addEventListener('click', () => loadCpFile(fullPath));
+        parentEl.appendChild(row);
+      }
+    }
+  }
+
+  renderNode(tree, list, 0, '');
+}
+
+async function toggleCodePanel() {
+  const panel = document.getElementById('codePanel');
+  const divider = document.getElementById('divider');
+  if (codePanelOpen) {
+    panel.classList.remove('open', 'transition');
+    panel.style.width = '';
+    divider.classList.remove('show');
+    codePanelOpen = false;
+    return;
+  }
+  if (!activeWorkflow) return;
+  panel.classList.add('open', 'transition');
+  divider.classList.add('show');
+  codePanelOpen = true;
+
+  // Load file list (always refresh on open)
+  await populateCpFileList();
+
+  // Load current file content
+  await loadCpFile(cpCurrentFile);
 }
 
 // === Modal overlay click-to-close ===
 document.getElementById('newModal').addEventListener('click', function(e) {
   if (e.target === this) closeNewModal();
 });
-document.getElementById('codeViewer').addEventListener('click', function(e) {
-  if (e.target === this) closeCodeViewer();
-});
 
 // === Textarea auto-resize ===
 document.getElementById('chatInput').addEventListener('input', function() {
   this.style.height = 'auto';
   this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+});
+
+// === Draggable divider ===
+const divider = document.getElementById('divider');
+const codePanel = document.getElementById('codePanel');
+
+divider.addEventListener('mousedown', function(e) {
+  e.preventDefault();
+  divider.classList.add('active');
+  document.body.style.cursor = 'col-resize';
+  document.body.style.userSelect = 'none';
+
+  const startX = e.clientX;
+  const startWidth = codePanel.offsetWidth;
+
+  function onMove(ev) {
+    const delta = startX - ev.clientX;
+    const newWidth = Math.max(200, Math.min(800, startWidth + delta));
+    codePanel.style.width = newWidth + 'px';
+  }
+
+  function onUp() {
+    divider.classList.remove('active');
+    document.body.style.cursor = '';
+    document.body.style.userSelect = '';
+    // Store final width as preference
+    codePanel.dataset.width = codePanel.style.width;
+    document.removeEventListener('mousemove', onMove);
+    document.removeEventListener('mouseup', onUp);
+  }
+
+  document.addEventListener('mousemove', onMove);
+  document.addEventListener('mouseup', onUp);
 });
 
 // === Init ===
