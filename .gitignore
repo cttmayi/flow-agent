@@ -8,5 +8,4 @@ node_modules/
 .flow-agent/workflows/*/
 .superpowers/
 TODO
-review.js
 docs/superpowers/
