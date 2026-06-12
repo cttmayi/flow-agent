@@ -5,3 +5,8 @@ node_modules/
 .env.development
 .DS_Store
 .flow-agent/config.yaml
+.flow-agent/workflows/*/
+.superpowers/
+TODO
+review.js
+docs/superpowers/
