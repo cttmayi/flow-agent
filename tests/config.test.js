@@ -1,8 +1,10 @@
-// lib/config.js — 加载 .flow-agent/config.yaml
-import { readFile } from 'node:fs/promises';
-import { join } from 'node:path';
+// tests/config.test.js
+import { describe, it } from 'node:test';
+import assert from 'node:assert';
 
-function parseYaml(text) {
+// Inline parseYaml for testing
+async function parseYaml(text) {
+  // parseYaml is not exported, so we inline the parser logic
   const lines = text.split('\n');
   return parseBlock(lines, 0).result;
 }
@@ -56,12 +58,33 @@ function parseBlock(lines, startIdx) {
   return { result, nextIdx: i };
 }
 
-export async function loadConfig() {
-  try {
-    const yamlPath = join(process.cwd(), '.flow-agent', 'config.yaml');
-    const text = await readFile(yamlPath, 'utf8');
-    return parseYaml(text);
-  } catch {
-    return {};
-  }
-}
+describe('config parser', () => {
+  it('parses flat keys', async () => {
+    const cfg = await parseYaml('key1: value1\nkey2: 42');
+    assert.strictEqual(cfg.key1, 'value1');
+    assert.strictEqual(cfg.key2, 42);
+  });
+
+  it('parses nested blocks', async () => {
+    const yaml = `default_agent: internal
+spawn_agents:
+  claude:
+    command: "claude"
+    args: ["-p", "{prompt}"]`;
+    const cfg = await parseYaml(yaml);
+    assert.strictEqual(cfg.default_agent, 'internal');
+    assert.strictEqual(cfg.spawn_agents.claude.command, 'claude');
+    assert.deepStrictEqual(cfg.spawn_agents.claude.args, ['-p', '{prompt}']);
+  });
+
+  it('skips comments and empty lines', async () => {
+    const cfg = await parseYaml('# comment\n\nkey: val\n');
+    assert.strictEqual(cfg.key, 'val');
+  });
+
+  it('parses quoted strings', async () => {
+    const cfg = await parseYaml('key: "hello world"\nnum: \'42\'');
+    assert.strictEqual(cfg.key, 'hello world');
+    assert.strictEqual(cfg.num, '42');
+  });
+});

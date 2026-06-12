@@ -1,6 +1,6 @@
 # Flow Agent — DSN‑JS Dynamic Workflow Agent Runtime
 
-基于 Node.js `vm` 沙箱和 Anthropic SDK 的 DSN‑JS 运行时，支持安全隔离的工作流执行，提供 CLI 和 Web UI。
+基于 Node.js `vm` 沙箱的 DSN‑JS 运行时，支持安全隔离的工作流执行，提供 CLI 和 Web UI。内置 Anthropic SDK 和外部 CLI（claude、codex 等）双 agent 后端。
 
 ## 安装
 
@@ -27,9 +27,13 @@ flow-agent/
 │   ├── sandbox.js                   — vm 沙箱 + 自定义 require
 │   ├── executor.js                  — 执行引擎
 │   ├── config.js                    — YAML 配置加载
+│   ├── agents.js                    — 内置 agent 定义（claude、codex 等）
 │   ├── cache.js / logger.js         — 缓存和日志
-│   ├── tools/                       — 工具注册表（bash、read）
+│   ├── tools/                       — 工具注册表（bash、read、write）
 │   ├── api/                         — agent/parallel/phase/checkpoint
+│   │   ├── agent.js                 — Agent 工厂（分发到 internal 或 spawn）
+│   │   ├── agent-anthropic.js       — Anthropic SDK provider（tool_use 循环）
+│   │   └── agent-spawn.js           — 通用 CLI 子进程 provider
 │   ├── prompts/                     — system prompt 模板
 │   └── web/                         — Web UI 前端文件
 ├── cli.js                           — CLI 入口
@@ -73,10 +77,10 @@ flow-agent serve [port]
 
 ### agent() 选项
 
-- `model` — 模型名称，默认 `claude-sonnet-4-20250514`
-- `tools` — 可用工具列表，如 `['bash', 'read']`
+- `model` — 模型名称（仅 internal provider），默认 `claude-sonnet-4-20250514`
+- `tools` — 可用工具列表，如 `['bash', 'read']`。internal provider 注册 tool schema；spawn provider 映射后通过 `--tools` 传给 CLI
 - `timeout` — 超时毫秒，默认 120000
-- `systemPrompt` — 自定义 system prompt
+- `systemPrompt` — 自定义 system prompt（仅 internal provider）
 
 ### parallel() 选项
 
@@ -104,6 +108,7 @@ const config = require('./config/rules.json');
 |------|------|------|------|
 | bash | `"bash"` | `{ command: string }` | 执行 Shell 命令 |
 | read | `"read"` | `{ path: string }` | 读取文件或列出目录 |
+| write | `"write"` | `{ path: string, content: string }` | 写入文件（Web UI 聊天用）|
 
 工作流代码**禁止直接操作外围环境**，所有交互必须通过 agent 工具完成。沙箱不暴露 `fs`/`path`/`process`。
 
@@ -118,11 +123,21 @@ anthropic_api_key: "YOUR_API_KEY_HERE"
 base_url: "http://127.0.0.1:8080"
 default_model: "claude-sonnet-4-20250514"
 default_timeout: 120000
+default_agent: "internal"          # "internal" | "claude" | "codex"
 ```
 
 ```bash
 cp .flow-agent/config.yaml.example .flow-agent/config.yaml
 ```
+
+### Agent 后端切换
+
+通过 `default_agent` 切换 agent 后端：
+
+- **`internal`** — 内置 SDK，通过 tool_use 循环调用 Anthropic API，workflow 中可指定 `tools` 注册工具
+- **`claude` / `codex`** — 外部 CLI 进程，通过 `-p` 参数传递 prompt，`tools` 通过 `--tools` 参数传递
+
+内置 agent 定义在 `lib/agents.js`，`tool_mapping` 自动将内部工具名映射为 CLI 专用名（如 `bash` → `Bash`、`write` → `Edit`）。
 
 ## 环境变量
 

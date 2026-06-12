@@ -15,3 +15,6 @@ default_model: "default"
 
 # 默认超时（毫秒）
 default_timeout: 120000
+
+# 默认 agent 提供者："internal"（内置 SDK）或 "claude"、"codex" 等内置 agent
+default_agent: "internal"
