@@ -52,4 +52,14 @@ describe('Sandbox', () => {
     const result = await createSandbox(`const val = await agent('test'); return val;`, apis);
     assert.strictEqual(result, 'async-result');
   });
+
+  it('exposes setTimeout and clearTimeout', async () => {
+    const apis = { agent: async () => {}, parallel: async () => [], phase: () => {}, checkpoint: async () => {} };
+    const result = await createSandbox(`
+      return new Promise(resolve => {
+        setTimeout(() => resolve('timed'), 10);
+      });
+    `, apis);
+    assert.strictEqual(result, 'timed');
+  });
 });

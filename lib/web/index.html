@@ -361,8 +361,12 @@ async function runWorkflow() {
             phasesEl.scrollTop = phasesEl.scrollHeight;
           } else if (lastEvent === 'done') {
             resultText = data;
+            // Mark all phases as completed
+            phasesEl.querySelectorAll('.spinner').forEach(s => { s.textContent = '✓'; s.style.animation = 'none'; });
           } else if (lastEvent === 'error') {
             resultText = data;
+            // Mark all phases as failed
+            phasesEl.querySelectorAll('.spinner').forEach(s => { s.textContent = '✗'; s.style.animation = 'none'; });
           }
         }
       }

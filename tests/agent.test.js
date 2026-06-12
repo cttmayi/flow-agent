@@ -59,14 +59,14 @@ describe('spawn agent provider', () => {
     assert.strictEqual(result, 'Bash,edit');
   });
 
-  it('should remove flag-value pair when tools empty', async () => {
+  it('should keep flag-value pair with empty tools to restrict claude', async () => {
     const agent = createSpawnAgent({
       command: 'echo',
       args: ['-p', '{prompt}', '--tools', '{tools}'],
     });
     const result = await agent('hello');
-    // Should be just: echo -p hello (no --tools)
-    assert.strictEqual(result, '-p hello');
+    // Keep --tools "" so claude doesn't default to all tools
+    assert.strictEqual(result, '-p hello --tools ""');
   });
 
   it('should include flag-value pair when tools provided', async () => {
