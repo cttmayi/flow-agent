@@ -34,3 +34,42 @@ const reviewPrompt = require('./prompts/code-review.txt');
 **注意：** require() 只支持相对路径，不支持 npm 包导入。
 
 **关键：** main.js 必须用 return await agent(...) 作为最终返回值。只赋值不 return 会导致输出为空。
+
+## tool() 直接调用
+
+`tool(name, params)` 可以直接执行工具，不经过 LLM，适合确定性操作：
+
+```js
+// 直接读取文件，不需要 LLM
+const pkg = JSON.parse(await tool("read", { path: "package.json" }));
+
+// 直接执行命令
+const files = await tool("bash", { command: "ls src/" });
+
+// 结合条件判断
+if (files.includes("bug.js")) {
+  // 只有复杂任务才用 agent
+  await agent("修复 bug.js", { tools: ["read", "write"] });
+}
+```
+
+可用的工具名称：bash（执行命令）、read（读文件）、write（写文件）。
+
+## agent() 的 format 选项
+
+`agent()` 支持 format 参数控制返回值格式，避免手动解析 LLM 输出：
+
+- `format: "json"` — 返回解析后的 JSON 对象/数组，LLM 输出不是合法 JSON 时会自动重试（最多 3 次）
+- `format: "code"` — 提取 markdown 代码块内容，去掉包裹标记
+- 不传 format（默认）— 返回原始文本
+
+示例：
+```js
+// JSON 格式：直接拿结构化数据
+const files = await agent("列出 src 目录的文件结构", { format: "json" });
+// files = { directories: ["src/utils"], files: ["src/index.js"] }
+
+// 代码格式：自动提取代码块
+const code = await agent("写一个冒泡排序", { format: "code" });
+// code = "function bubbleSort(arr) { ... }"  ← 自动去掉 ``` 包裹
+```

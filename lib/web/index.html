@@ -11,17 +11,39 @@
 body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; height: 100vh; display: flex; background: #1a1a2e; color: #e0e0e0; }
 
 /* Sidebar */
-.sidebar { width: 240px; min-width: 240px; background: #16213e; display: flex; flex-direction: column; border-right: 1px solid #0f3460; }
+.sidebar { width: 240px; min-width: 240px; background: #16213e; display: flex; flex-direction: column; border-right: 1px solid #0f3460; transition: width 0.2s, min-width 0.2s, border 0.2s; overflow: hidden; }
+.sidebar.collapsed { width: 0; min-width: 0; border-right: none; }
 .sidebar-header { padding: 12px; border-bottom: 1px solid #0f3460; }
 .sidebar-header h1 { font-size: 16px; color: #e94560; }
 .btn-new { width: 100%; margin-top: 8px; padding: 6px 12px; background: #e94560; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 13px; }
 .btn-new:hover { background: #d63850; }
 .workflow-list { flex: 1; overflow-y: auto; padding: 4px 0; }
-.workflow-item { padding: 8px 12px; cursor: pointer; font-size: 14px; border-left: 3px solid transparent; }
+.wf-group-label { padding: 6px 12px 2px; font-size: 11px; color: #666; text-transform: uppercase; letter-spacing: 0.5px; }
+.workflow-item { padding: 6px 12px; cursor: pointer; font-size: 14px; border-left: 3px solid transparent; white-space: nowrap; display: flex; align-items: center; gap: 4px; }
 .workflow-item:hover { background: rgba(255,255,255,0.05); }
 .workflow-item.active { background: rgba(233,69,96,0.15); border-left-color: #e94560; color: #e94560; }
+.workflow-item .wf-name-text { flex: 1; overflow: hidden; text-overflow: ellipsis; }
+.workflow-item .wf-source { font-size: 10px; color: #666; background: rgba(255,255,255,0.06); padding: 1px 5px; border-radius: 3px; flex-shrink: 0; }
+.workflow-item .wf-copy { font-size: 11px; color: #555; cursor: pointer; padding: 0 4px; flex-shrink: 0; display: none; }
+.workflow-item:hover .wf-copy { display: inline; }
+.workflow-item .wf-copy:hover { color: #4fc3f7; }
+.workflow-item .wf-del { font-size: 13px; color: #555; cursor: pointer; padding: 0 4px; flex-shrink: 0; display: none; }
+.workflow-item:hover .wf-del { display: inline; }
+.workflow-item .wf-del:hover { color: #e94560; }
 
-/* Main */
+/* Toast */
+.toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); padding: 10px 20px; border-radius: 6px; font-size: 14px; z-index: 200; opacity: 0; transition: opacity 0.3s; pointer-events: none; }
+.toast.show { opacity: 1; }
+.toast.info { background: #16213e; border: 1px solid #0f3460; color: #e0e0e0; }
+.toast.success { background: #1b5e20; color: white; }
+.toast.error { background: #b71c1c; color: white; }
+.btn-collapse { background: none; border: none; color: #666; cursor: pointer; font-size: 11px; padding: 2px 6px; border-radius: 3px; line-height: 1; }
+.btn-collapse:hover { color: #e0e0e0; background: rgba(255,255,255,0.1); }
+
+/* Main container (main + divider + code-panel) */
+.main-container { flex: 1; display: flex; min-width: 0; }
+
+/* Main chat area */
 .main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
 .top-bar { padding: 8px 16px; background: #16213e; border-bottom: 1px solid #0f3460; display: flex; align-items: center; gap: 8px; }
 .top-bar .wf-name { font-size: 14px; font-weight: 600; flex: 1; }
@@ -71,14 +93,16 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; h
 
 /* Code panel */
 .code-panel { width: 0; overflow: hidden; background: #111827; border-left: 1px solid #0f3460; display: flex; flex-direction: column; }
-.code-panel.open { width: 480px; }
+.code-panel.open { /* width set by JS for 50/50 split */ }
 .code-panel.open.transition { transition: width 0.2s; }
 .code-panel-header { padding: 8px 12px; border-bottom: 1px solid #0f3460; display: flex; align-items: center; gap: 8px; font-size: 13px; }
 .code-panel-header .cp-name { flex: 1; font-weight: 600; }
 .code-panel-header .cp-name .ext { color: #666; font-weight: normal; }
-.code-panel-body { flex: 1; overflow: auto; padding: 0; }
-.code-panel-body pre { margin: 0; padding: 12px; font-size: 13px; line-height: 1.6; }
-.code-panel-body code { background: transparent; padding: 0; font-size: 13px; white-space: pre-wrap; word-break: break-all; }
+.code-panel-body { flex: 1; overflow: hidden; padding: 0; position: relative; }
+.cp-editor-container { position: absolute; inset: 0; }
+.cp-editor-container pre { margin: 0; padding: 12px; font-size: 13px; line-height: 1.6; pointer-events: none; }
+.cp-editor-container pre code { background: transparent; padding: 0; font-size: 13px; white-space: pre; word-break: normal; }
+.cp-editor { position: absolute; inset: 0; width: 100%; height: 100%; padding: 12px; border: none; outline: none; background: transparent; color: transparent; caret-color: #e0e0e0; font-family: 'SF Mono', 'Menlo', 'Consolas', monospace; font-size: 13px; line-height: 1.6; resize: none; tab-size: 2; white-space: pre; overflow: auto; }
 .code-panel-files { border-bottom: 1px solid #0f3460; overflow-y: auto; padding: 2px 0; font-size: 12px; }
 .cp-file { padding: 2px 8px 2px 12px; cursor: pointer; color: #aaa; white-space: nowrap; display: flex; align-items: center; gap: 3px; }
 .cp-file:hover { background: rgba(255,255,255,0.05); color: #e0e0e0; }
@@ -105,41 +129,51 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; h
 </style>
 </head>
 <body>
-<div class="sidebar">
+<div class="sidebar" id="sidebar">
   <div class="sidebar-header">
-    <h1>flow-agent</h1>
+    <div style="display:flex;align-items:center;justify-content:space-between">
+      <h1>flow-agent</h1>
+      <button class="btn-collapse" onclick="toggleSidebar()" title="折叠侧栏">◀</button>
+    </div>
     <button class="btn-new" onclick="showNewModal()">+ 新建</button>
   </div>
   <div class="workflow-list" id="workflowList"></div>
 </div>
 
-<div class="main">
-  <div class="top-bar" id="topBar" style="display:none">
-    <span class="wf-name" id="wfName"></span>
-    <button class="btn btn-primary" onclick="runWorkflow()">执行</button>
-    <button class="btn btn-code" onclick="toggleCodePanel()">查看代码</button>
+<div class="main-container">
+  <div class="main">
+    <div class="top-bar" id="topBar" style="display:none">
+      <button class="btn btn-expand" id="expandBtn" onclick="toggleSidebar()" title="展开侧栏" style="display:none">▶</button>
+      <span class="wf-name" id="wfName"></span>
+      <button class="btn btn-primary" onclick="runWorkflow()">执行</button>
+      <button class="btn btn-code" onclick="toggleCodePanel()">查看代码</button>
+    </div>
+    <div class="chat-area" id="chatArea">
+      <div class="empty-state" id="emptyState">选择一个 workflow 开始</div>
+    </div>
+    <div class="input-bar" id="inputBar" style="display:none">
+      <textarea id="chatInput" rows="1" placeholder="输入指令修改 workflow..." onkeydown="onInputKeydown(event)"></textarea>
+      <button class="btn-send" id="sendBtn" onclick="sendMessage()">发送</button>
+    </div>
   </div>
-  <div class="chat-area" id="chatArea">
-    <div class="empty-state" id="emptyState">选择一个 workflow 开始</div>
-  </div>
-  <div class="input-bar" id="inputBar" style="display:none">
-    <textarea id="chatInput" rows="1" placeholder="输入指令修改 workflow..." onkeydown="onInputKeydown(event)"></textarea>
-    <button class="btn-send" id="sendBtn" onclick="sendMessage()">发送</button>
-  </div>
-</div>
 
-<!-- Divider -->
-<div class="divider" id="divider"></div>
+  <!-- Divider -->
+  <div class="divider" id="divider"></div>
 
-<!-- Code Panel -->
-<div class="code-panel" id="codePanel">
-  <div class="code-panel-header">
-    <span class="cp-name" id="cpName"><span class="ext">代码</span></span>
-    <button class="btn" onclick="toggleCodePanel()">关闭</button>
-  </div>
-  <div class="code-panel-files" id="cpFileList"></div>
-  <div class="code-panel-body">
-    <pre><code id="cpContent" class="language-javascript"></code></pre>
+  <!-- Code Panel -->
+  <div class="code-panel" id="codePanel">
+    <div class="code-panel-header">
+      <span class="cp-name" id="cpName"><span class="ext">代码</span></span>
+      <button class="btn" id="cpSaveBtn" onclick="saveCpFile()" style="display:none">保存</button>
+      <button class="btn" onclick="toggleCodePanel()">关闭</button>
+    </div>
+    <div class="code-panel-files" id="cpFileList"></div>
+    <div class="code-panel-body">
+      <div class="cp-editor-container">
+        <pre><code id="cpHighlight" class="language-javascript"></code></pre>
+        <textarea id="cpContent" class="cp-editor" spellcheck="false" wrap="off" oninput="onCpEdit()" onscroll="syncCpScroll()" onkeydown="onCpKeydown(event)"></textarea>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -169,6 +203,21 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; h
   </div>
 </div>
 
+<!-- Confirm Modal -->
+<div class="modal-overlay" id="confirmModal">
+  <div class="modal" style="width:380px">
+    <h2 id="confirmTitle">确认</h2>
+    <p id="confirmText" style="margin:12px 0;font-size:14px;line-height:1.6;"></p>
+    <div class="modal-actions">
+      <button class="btn" id="confirmCancelBtn" onclick="closeConfirmModal()">取消</button>
+      <button class="btn btn-primary" id="confirmOkBtn">确定</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
 <script src="/marked.min.js"></script>
 <script src="/highlight.min.js"></script>
 <script>
@@ -177,9 +226,22 @@ let activeWorkflow = null;
 let loadingMessages = false;
 let loadingSend = false;
 let loadingRun = false;
+let sidebarOpen = true;
+let codePanelOpen = false;
+let codePanelFiles = [];
+let cpCurrentFile = 'main.js';
 
 function escapeHTML(str) {
   return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+// === Sidebar ===
+function toggleSidebar() {
+  const sidebar = document.getElementById('sidebar');
+  const expandBtn = document.getElementById('expandBtn');
+  sidebarOpen = !sidebarOpen;
+  sidebar.classList.toggle('collapsed');
+  expandBtn.style.display = sidebarOpen ? 'none' : 'inline-block';
 }
 
 // === API Helpers ===
@@ -203,21 +265,104 @@ async function loadWorkflows() {
   }
   const list = document.getElementById('workflowList');
   list.innerHTML = '';
-  for (const w of workflows) {
-    const item = document.createElement('div');
-    item.className = 'workflow-item' + (w === activeWorkflow ? ' active' : '');
-    item.textContent = w;
-    item.addEventListener('click', () => selectWorkflow(w));
-    list.appendChild(item);
+
+  const projectItems = workflows.filter(w => w.source === 'project');
+  const globalItems = workflows.filter(w => w.source === 'global' && !w.overridden);
+  const allGlobal = workflows.filter(w => w.source === 'global'); // includes overridden for conflict check
+
+  function addGroup(label, items) {
+    if (items.length === 0) return;
+    const groupLabel = document.createElement('div');
+    groupLabel.className = 'wf-group-label';
+    groupLabel.textContent = label;
+    list.appendChild(groupLabel);
+    for (const w of items) {
+      const item = document.createElement('div');
+      item.className = 'workflow-item' + (w.name === activeWorkflow ? ' active' : '');
+      item.dataset.name = w.name;
+
+      const nameSpan = document.createElement('span');
+      nameSpan.className = 'wf-name-text';
+      nameSpan.textContent = w.name;
+      item.appendChild(nameSpan);
+
+      if (w.source === 'global') {
+        const src = document.createElement('span');
+        src.className = 'wf-source';
+        src.textContent = '全局';
+        item.appendChild(src);
+      }
+
+      // Copy button (only show for project items, to copy to global)
+      if (w.source === 'project') {
+        const copyBtn = document.createElement('span');
+        copyBtn.className = 'wf-copy';
+        copyBtn.textContent = '📋';
+        copyBtn.title = '复制到全局';
+        copyBtn.addEventListener('click', async (e) => {
+          e.stopPropagation();
+          // Check if global already has a workflow with same name
+          const existsInGlobal = allGlobal.some(g => g.name === w.name);
+          if (existsInGlobal) {
+            showConfirmModal(
+              '覆盖确认',
+              `全局中已存在 workflow "${w.name}"，确定要覆盖吗？`,
+              async () => {
+                await doCopyWorkflow(w.name);
+              }
+            );
+          } else {
+            await doCopyWorkflow(w.name);
+          }
+        });
+        item.appendChild(copyBtn);
+
+        // Delete button
+        const delBtn = document.createElement('span');
+        delBtn.className = 'wf-del';
+        delBtn.textContent = '✕';
+        delBtn.title = '删除 workflow';
+        delBtn.addEventListener('click', async (e) => {
+          e.stopPropagation();
+          showConfirmModal(
+            '删除确认',
+            `确定要删除 workflow "${w.name}" 吗？此操作不可撤销。`,
+            async () => {
+              try {
+                await api(`/api/workflows/${encodeURIComponent(w.name)}`, { method: 'DELETE' });
+                if (activeWorkflow === w.name) selectWorkflow(null);
+                await loadWorkflows();
+                showToast(`已删除 "${w.name}"`, 'success');
+              } catch (err) {
+                showToast('删除失败：' + err.message, 'error');
+              }
+            }
+          );
+        });
+        item.appendChild(delBtn);
+      }
+
+      item.addEventListener('click', () => selectWorkflow(w.name));
+      list.appendChild(item);
+    }
   }
+
+  addGroup('项目', projectItems);
+  addGroup('全局', globalItems);
 }
 
-function selectWorkflow(name) {
+async function selectWorkflow(name) {
   activeWorkflow = name;
+  if (!name) {
+    document.getElementById('topBar').style.display = 'none';
+    document.getElementById('inputBar').style.display = 'none';
+    document.querySelectorAll('.workflow-item').forEach(el => el.classList.remove('active'));
+    return;
+  }
   loadingMessages = name;
   document.querySelectorAll('.workflow-item').forEach(el => el.classList.remove('active'));
   document.querySelectorAll('.workflow-item').forEach(el => {
-    if (el.textContent === name) el.classList.add('active');
+    if (el.dataset.name === name) el.classList.add('active');
   });
   document.getElementById('topBar').style.display = 'flex';
   document.getElementById('inputBar').style.display = 'flex';
@@ -413,40 +558,124 @@ async function createWorkflow() {
   }
 }
 
-// === Code Panel ===
-let codePanelOpen = false;
-let codePanelFiles = [];
-let cpCurrentFile = 'main.js';
+async function doCopyWorkflow(name) {
+  try {
+    await api(`/api/workflows/${encodeURIComponent(name)}/copy`, {
+      method: 'POST',
+      body: JSON.stringify({ to: 'global' }),
+    });
+    await loadWorkflows();
+    showToast(`已复制 "${name}" 到全局`, 'success');
+  } catch (err) {
+    showToast('复制失败：' + err.message, 'error');
+  }
+}
 
+// === Code Panel ===
 function highlightCode(el) {
   delete el.dataset.highlighted;
   hljs.highlightElement(el);
 }
 
-async function loadCpFile(filePath) {
-  const codeEl = document.getElementById('cpContent');
-  const ext = filePath.endsWith('.json') ? 'json' : 'javascript';
+let cpDirty = false;
+let cpHighlightTimer = null;
+
+function doHighlight() {
+  const textarea = document.getElementById('cpContent');
+  const codeEl = document.getElementById('cpHighlight');
+  const ext = cpCurrentFile.endsWith('.json') ? 'json' : 'javascript';
   codeEl.className = `language-${ext}`;
+  codeEl.textContent = textarea.value;
+  delete codeEl.dataset.highlighted;
+  hljs.highlightElement(codeEl);
+}
+
+function syncCpScroll() {
+  const textarea = document.getElementById('cpContent');
+  const pre = document.querySelector('#cpHighlight').parentElement;
+  pre.scrollTop = textarea.scrollTop;
+  pre.scrollLeft = textarea.scrollLeft;
+}
+
+async function loadCpFile(filePath) {
+  const textarea = document.getElementById('cpContent');
+  const saveBtn = document.getElementById('cpSaveBtn');
   try {
     let content;
     if (codePanelFiles.length > 0) {
-      // Directory workflow: load specific file
       const data = await api(`/api/workflows/${encodeURIComponent(activeWorkflow)}/file/${filePath}`);
       content = data.content;
     } else {
-      // Single-file workflow: load main code
       const data = await api(`/api/workflows/${encodeURIComponent(activeWorkflow)}`);
       content = data.code;
     }
-    codeEl.textContent = content;
+    textarea.value = content;
+    doHighlight();
   } catch {
-    codeEl.textContent = '(加载失败)';
+    textarea.value = '(加载失败)';
+    document.getElementById('cpHighlight').textContent = '(加载失败)';
   }
-  highlightCode(codeEl);
+  cpDirty = false;
+  saveBtn.style.display = 'none';
   document.querySelectorAll('.cp-file').forEach(el => {
     el.classList.toggle('active', el.dataset.path === filePath);
   });
   cpCurrentFile = filePath;
+}
+
+function onCpEdit() {
+  if (!cpDirty) {
+    cpDirty = true;
+    document.getElementById('cpSaveBtn').style.display = 'inline-block';
+  }
+  // Debounced highlight update
+  clearTimeout(cpHighlightTimer);
+  cpHighlightTimer = setTimeout(doHighlight, 100);
+}
+
+function onCpKeydown(e) {
+  // Ctrl+S to save
+  if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+    e.preventDefault();
+    saveCpFile();
+    return;
+  }
+  // Tab for indentation
+  if (e.key === 'Tab') {
+    e.preventDefault();
+    const ta = e.target;
+    const start = ta.selectionStart;
+    const end = ta.selectionEnd;
+    ta.value = ta.value.substring(0, start) + '  ' + ta.value.substring(end);
+    ta.selectionStart = ta.selectionEnd = start + 2;
+    onCpEdit();
+  }
+}
+
+async function saveCpFile() {
+  const textarea = document.getElementById('cpContent');
+  const content = textarea.value;
+  const saveBtn = document.getElementById('cpSaveBtn');
+  try {
+    if (codePanelFiles.length > 0) {
+      await api(`/api/workflows/${encodeURIComponent(activeWorkflow)}/file/${cpCurrentFile}`, {
+        method: 'PUT',
+        body: JSON.stringify({ content }),
+      });
+    } else {
+      await api(`/api/workflows/${encodeURIComponent(activeWorkflow)}`, {
+        method: 'PUT',
+        body: JSON.stringify({ code: content }),
+      });
+    }
+    cpDirty = false;
+    saveBtn.style.display = 'none';
+    saveBtn.textContent = '✓ 已保存';
+    setTimeout(() => { saveBtn.textContent = '保存'; }, 1500);
+  } catch (err) {
+    saveBtn.textContent = '✗ 失败';
+    setTimeout(() => { saveBtn.textContent = '保存'; }, 2000);
+  }
 }
 
 async function populateCpFileList() {
@@ -550,6 +779,11 @@ async function toggleCodePanel() {
   divider.classList.add('show');
   codePanelOpen = true;
 
+  // Set initial width to 50% of available space (equal to chat area)
+  const container = panel.parentElement;
+  const availWidth = container.offsetWidth - (divider.offsetWidth || 5);
+  panel.style.width = Math.min(availWidth / 2, 800) + 'px';
+
   // Load file list (always refresh on open)
   await populateCpFileList();
 
@@ -561,10 +795,47 @@ async function toggleCodePanel() {
 document.getElementById('newModal').addEventListener('click', function(e) {
   if (e.target === this) closeNewModal();
 });
+document.getElementById('confirmModal').addEventListener('click', function(e) {
+  if (e.target === this) closeConfirmModal();
+});
 // Progress modal: prevent close on overlay click
 document.getElementById('progressModal').addEventListener('click', function(e) {
   if (e.target === this) return; // do nothing
 });
+
+// === Confirm Modal ===
+let confirmCallback = null;
+
+function showConfirmModal(title, text, onOk) {
+  document.getElementById('confirmTitle').textContent = title;
+  document.getElementById('confirmText').textContent = text;
+  confirmCallback = onOk;
+  document.getElementById('confirmModal').classList.add('show');
+}
+
+function closeConfirmModal() {
+  document.getElementById('confirmModal').classList.remove('show');
+  confirmCallback = null;
+}
+
+document.getElementById('confirmOkBtn').addEventListener('click', function() {
+  if (confirmCallback) {
+    const cb = confirmCallback;
+    closeConfirmModal();
+    cb();
+  }
+});
+
+// === Toast ===
+let toastTimer = null;
+
+function showToast(msg, type) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = 'toast ' + (type || 'info') + ' show';
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { el.classList.remove('show'); }, 2000);
+}
 
 // === Textarea auto-resize ===
 document.getElementById('chatInput').addEventListener('input', function() {
@@ -584,10 +855,11 @@ divider.addEventListener('mousedown', function(e) {
 
   const startX = e.clientX;
   const startWidth = codePanel.offsetWidth;
+  const containerWidth = codePanel.parentElement.offsetWidth;
 
   function onMove(ev) {
     const delta = startX - ev.clientX;
-    const newWidth = Math.max(200, Math.min(800, startWidth + delta));
+    const newWidth = Math.max(200, Math.min(containerWidth - 300, startWidth + delta));
     codePanel.style.width = newWidth + 'px';
   }
 
@@ -595,8 +867,6 @@ divider.addEventListener('mousedown', function(e) {
     divider.classList.remove('active');
     document.body.style.cursor = '';
     document.body.style.userSelect = '';
-    // Store final width as preference
-    codePanel.dataset.width = codePanel.style.width;
     document.removeEventListener('mousemove', onMove);
     document.removeEventListener('mouseup', onUp);
   }

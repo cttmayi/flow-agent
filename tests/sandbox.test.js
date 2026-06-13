@@ -62,4 +62,26 @@ describe('Sandbox', () => {
     `, apis);
     assert.strictEqual(result, 'timed');
   });
+
+  it('exposes sleep function', async () => {
+    const apis = { agent: async () => {}, parallel: async () => [], phase: () => {}, checkpoint: async () => {}, tool: async () => {} };
+    const start = Date.now();
+    await createSandbox(`await sleep(50);`, apis);
+    const elapsed = Date.now() - start;
+    assert.ok(elapsed >= 40, `sleep(50) took ${elapsed}ms`);
+  });
+
+  it('exposes tool function that executes via registry', async () => {
+    let capturedName, capturedParams;
+    const mockTool = async (name, params) => {
+      capturedName = name;
+      capturedParams = params;
+      return 'mock-result';
+    };
+    const apis = { agent: async () => {}, parallel: async () => [], phase: () => {}, checkpoint: async () => {}, tool: mockTool };
+    const result = await createSandbox(`return await tool('bash', { command: 'ls' });`, apis);
+    assert.strictEqual(result, 'mock-result');
+    assert.strictEqual(capturedName, 'bash');
+    assert.strictEqual(capturedParams.command, 'ls');
+  });
 });

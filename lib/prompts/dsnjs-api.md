@@ -10,8 +10,22 @@
 
 ## API 说明
 
-- agent(prompt, opts?) — 调用 AI agent，返回文本结果。opts 可指定 model、tools（工具名称数组）、timeout。
+- tool(name, params) — 直接执行已注册的工具，不经过 LLM。name 是工具名称（如 "bash"、"read"、"write"），params 是工具参数对象。返回工具执行结果。
+  - 相比 agent()，tool() 没有 LLM 开销，适合确定性操作（读文件、执行命令等）。
+  - 示例：`const files = await tool("bash", { command: "ls src/" });`
+  - 示例：`const content = await tool("read", { path: "config.json" });`
+- agent(prompt, opts?) — 调用 AI agent，返回文本结果。opts 可指定 model、tools（工具名称数组）、timeout、format。
   - model 只能省略（使用默认模型）或设为有效的 claude 模型（如 claude-sonnet-4-20250514），禁止设为不存在的模型名。
+  - format 控制返回值格式。可选值：
+    - 不传或 "text"（默认）— 返回原始文本
+    - "json" — 返回解析后的 JSON 对象/数组。LLM 输出不是合法 JSON 时会自动重试（最多 3 次）。示例：
+      ```js
+      const data = await agent("分析项目结构", { tools: ["bash"], format: "json" });
+      ```
+    - "code" — 提取 markdown 代码块内容，去掉 ``` 包裹标记。示例：
+      ```js
+      const fn = await agent("写一个排序函数", { format: "code" });
+      ```
 - parallel(tasks, opts?) — 并行执行 async 函数数组。opts 支持 concurrency（默认 5）和 failFast（默认 true）。
 - phase(name) — 标记工作流阶段，仅用于日志输出。
 - checkpoint(key, value?) — 一个参数读取缓存；两个参数写入缓存并返回值。
