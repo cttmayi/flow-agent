@@ -20,8 +20,7 @@ async function main() {
   if (!command) {
     console.error('Usage:');
     console.error('  flow-agent run <workflow-name>');
-    console.error('  flow-agent generate <filename> "<description>"');
-    console.error('  flow-agent generate-run <filename> "<description>"');
+    console.error('  flow-agent serve [port]');
     process.exit(1);
   }
 
@@ -33,27 +32,6 @@ async function main() {
     }
     const result = await engine.run(name);
     logger.result(result);
-    return;
-  }
-
-  if (command === 'generate' || command === 'generate-run') {
-    const name = args[0];
-    const description = args.slice(1).join(' ');
-    if (!name || !description) {
-      console.error('Usage: node cli.js generate <filename> "<description>"');
-      process.exit(1);
-    }
-
-    const { code } = await engine.generate(
-      name,
-      description,
-      (text) => console.log(`[generate] ${text}`)
-    );
-
-    if (command === 'generate-run') {
-      const result = await engine.execute(code);
-      logger.result(result);
-    }
     return;
   }
 
