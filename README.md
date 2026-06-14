@@ -44,22 +44,20 @@ flow-agent/
 ## CLI 用法
 
 ```bash
+# 启动 Web UI（默认端口 3000）
+flow-agent
+
+# 指定端口
+flow-agent -p 8080
+flow-agent --port 8080
+
 # 执行已有工作流
 flow-agent run <workflow-name>
-
-# 生成 DSN‑JS 工作流文件
-flow-agent generate <name> "<description>"
-
-# 生成并立即执行
-flow-agent generate-run <name> "<description>"
-
-# 启动 Web UI
-flow-agent serve [port]
 ```
 
 ## Web UI
 
-启动 `flow-agent serve` 后在浏览器中打开 `http://localhost:3000`。
+启动 `flow-agent` 后在浏览器中打开 `http://localhost:3000`（或 `-p` 指定端口）。
 
 - 左侧：workflow 列表
 - 中间：对话窗口（聊天修改 workflow）
