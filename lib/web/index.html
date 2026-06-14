@@ -451,8 +451,7 @@ async function loadWorkflows() {
   list.innerHTML = '';
 
   const projectItems = workflows.filter(w => w.source === 'project');
-  const globalItems = workflows.filter(w => w.source === 'global' && !w.overridden);
-  const allGlobal = workflows.filter(w => w.source === 'global'); // includes overridden for conflict check
+  const globalItems = workflows.filter(w => w.source === 'global');
 
   function addGroup(label, items) {
     if (items.length === 0) return;
@@ -473,58 +472,58 @@ async function loadWorkflows() {
       if (w.source === 'global') {
         const src = document.createElement('span');
         src.className = 'wf-source';
-        src.textContent = '全局';
+        src.textContent = w.overridden ? '全局(覆盖)' : '全局';
+        if (w.overridden) src.style.color = '#888';
         item.appendChild(src);
       }
 
-      // Copy button (only show for project items, to copy to global)
-      if (w.source === 'project') {
-        const copyBtn = document.createElement('span');
-        copyBtn.className = 'wf-copy';
-        copyBtn.textContent = '📋';
-        copyBtn.title = '复制到全局';
-        copyBtn.addEventListener('click', async (e) => {
-          e.stopPropagation();
-          // Check if global already has a workflow with same name
-          const existsInGlobal = allGlobal.some(g => g.name === w.name);
-          if (existsInGlobal) {
-            showConfirmModal(
-              '覆盖确认',
-              `全局中已存在 workflow "${w.name}"，确定要覆盖吗？`,
-              async () => {
-                await doCopyWorkflow(w.name);
-              }
-            );
-          } else {
-            await doCopyWorkflow(w.name);
-          }
-        });
-        item.appendChild(copyBtn);
-
-        // Delete button
-        const delBtn = document.createElement('span');
-        delBtn.className = 'wf-del';
-        delBtn.textContent = '✕';
-        delBtn.title = '删除 workflow';
-        delBtn.addEventListener('click', async (e) => {
-          e.stopPropagation();
+      // Copy button: project→global or global→project
+      const copyBtn = document.createElement('span');
+      copyBtn.className = 'wf-copy';
+      copyBtn.textContent = '📋';
+      copyBtn.title = w.source === 'project' ? '复制到全局' : '复制到项目';
+      copyBtn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        const to = w.source === 'project' ? 'global' : 'project';
+        const targetList = to === 'global' ? '全局' : '项目';
+        const existsInTarget = workflows.some(g => g.name === w.name && g.source === to);
+        if (existsInTarget) {
           showConfirmModal(
-            '删除确认',
-            `确定要删除 workflow "${w.name}" 吗？此操作不可撤销。`,
+            '覆盖确认',
+            `${targetList}中已存在 workflow "${w.name}"，确定要覆盖吗？`,
             async () => {
-              try {
-                await api(`/api/workflows/${encodeURIComponent(w.name)}`, { method: 'DELETE' });
-                if (activeWorkflow === w.name) selectWorkflow(null);
-                await loadWorkflows();
-                showToast(`已删除 "${w.name}"`, 'success');
-              } catch (err) {
-                showToast('删除失败：' + err.message, 'error');
-              }
+              await doCopyWorkflow(w.name, to);
             }
           );
-        });
-        item.appendChild(delBtn);
-      }
+        } else {
+          await doCopyWorkflow(w.name, to);
+        }
+      });
+      item.appendChild(copyBtn);
+
+      // Delete button
+      const delBtn = document.createElement('span');
+      delBtn.className = 'wf-del';
+      delBtn.textContent = '✕';
+      delBtn.title = '删除 workflow';
+      delBtn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        showConfirmModal(
+          '删除确认',
+          `确定要删除${w.source === 'global' ? '全局' : '项目'} workflow "${w.name}" 吗？此操作不可撤销。`,
+          async () => {
+            try {
+              await api(`/api/workflows/${encodeURIComponent(w.name)}`, { method: 'DELETE' });
+              if (activeWorkflow === w.name) selectWorkflow(null);
+              await loadWorkflows();
+              showToast(`已删除 "${w.name}"`, 'success');
+            } catch (err) {
+              showToast('删除失败：' + err.message, 'error');
+            }
+          }
+        );
+      });
+      item.appendChild(delBtn);
 
       item.addEventListener('click', () => selectWorkflow(w.name));
       list.appendChild(item);
@@ -847,14 +846,15 @@ async function createWorkflow() {
   }
 }
 
-async function doCopyWorkflow(name) {
+async function doCopyWorkflow(name, to = 'global') {
   try {
     await api(`/api/workflows/${encodeURIComponent(name)}/copy`, {
       method: 'POST',
-      body: JSON.stringify({ to: 'global' }),
+      body: JSON.stringify({ to }),
     });
     await loadWorkflows();
-    showToast(`已复制 "${name}" 到全局`, 'success');
+    const targetLabel = to === 'global' ? '全局' : '项目';
+    showToast(`已复制 "${name}" 到${targetLabel}`, 'success');
   } catch (err) {
     showToast('复制失败：' + err.message, 'error');
   }
