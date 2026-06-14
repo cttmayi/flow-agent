@@ -68,6 +68,14 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; h
 .chat-msg a { color: #4fc3f7; }
 .chat-msg strong { font-weight: 600; }
 
+/* Thinking indicator */
+.thinking-dots { color: #888; font-size: 14px; }
+.thinking-dots .dot { animation: blink 1.4s infinite; font-weight: bold; }
+.thinking-dots .dot:nth-child(2) { animation-delay: 0.2s; }
+.thinking-dots .dot:nth-child(3) { animation-delay: 0.4s; }
+.thinking-dots .dot:nth-child(4) { animation-delay: 0.6s; }
+@keyframes blink { 0%, 20% { opacity: 0; } 50% { opacity: 1; } 100% { opacity: 0; } }
+
 /* Input */
 .input-bar { padding: 12px 16px; background: #16213e; border-top: 1px solid #0f3460; display: flex; gap: 8px; }
 .input-bar textarea { flex: 1; padding: 8px; border: 1px solid #0f3460; border-radius: 4px; background: #1a1a2e; color: #e0e0e0; font-size: 14px; resize: none; min-height: 20px; max-height: 120px; outline: none; }
@@ -79,10 +87,11 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; h
 /* Modal */
 .modal-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); align-items: center; justify-content: center; z-index: 100; }
 .modal-overlay.show { display: flex; }
-.modal { background: #16213e; border: 1px solid #0f3460; border-radius: 8px; padding: 24px; width: 420px; max-width: 90vw; }
-.modal h2 { margin-bottom: 16px; font-size: 18px; }
-.modal label { display: block; font-size: 13px; margin-bottom: 4px; color: #999; }
-.modal input, .modal textarea { width: 100%; padding: 8px; border: 1px solid #0f3460; border-radius: 4px; background: #1a1a2e; color: #e0e0e0; margin-bottom: 12px; outline: none; }
+.modal { background: #1a1a2e; border: 1px solid #333; border-radius: 12px; padding: 28px; width: 420px; max-width: 90vw; box-shadow: 0 8px 32px rgba(0,0,0,0.4); }
+.modal h2 { margin-bottom: 20px; font-size: 18px; color: #e0e0e0; }
+.modal label { display: block; font-size: 13px; margin-bottom: 6px; color: #888; font-weight: 500; }
+.modal input, .modal textarea { width: 100%; padding: 10px 12px; border: 1px solid #333; border-radius: 8px; background: #111827; color: #e0e0e0; margin-bottom: 16px; outline: none; font-size: 14px; transition: border-color 0.15s; }
+.modal input:focus, .modal textarea:focus { border-color: #e94560; }
 .modal textarea { min-height: 80px; }
 .modal-actions { display: flex; gap: 8px; justify-content: flex-end; }
 
@@ -100,7 +109,8 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; h
 .code-panel-header .cp-name .ext { color: #666; font-weight: normal; }
 .code-panel-body { flex: 1; overflow: hidden; padding: 0; position: relative; }
 .cp-editor-container { position: absolute; inset: 0; }
-.cp-editor-container pre { margin: 0; padding: 12px; font-size: 13px; line-height: 1.6; pointer-events: none; }
+.cp-editor-container pre { position: absolute; inset: 0; margin: 0; padding: 12px; font-size: 13px; line-height: 1.6; pointer-events: none; overflow: hidden; }
+.cp-editor-container pre code { display: inline-block; min-width: 100%; }
 .cp-editor-container pre code { background: transparent; padding: 0; font-size: 13px; white-space: pre; word-break: normal; }
 .cp-editor { position: absolute; inset: 0; width: 100%; height: 100%; padding: 12px; border: none; outline: none; background: transparent; color: transparent; caret-color: #e0e0e0; font-family: 'SF Mono', 'Menlo', 'Consolas', monospace; font-size: 13px; line-height: 1.6; resize: none; tab-size: 2; white-space: pre; overflow: auto; }
 .code-panel-files { border-bottom: 1px solid #0f3460; overflow-y: auto; padding: 2px 0; font-size: 12px; }
@@ -122,6 +132,17 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; h
 /* Empty state */
 .empty-state { flex: 1; display: flex; align-items: center; justify-content: center; color: #555; font-size: 14px; }
 
+/* Create mode banner */
+.create-banner { background: linear-gradient(90deg, #1a73e8, #4285f4); color: #fff; padding: 8px 16px; display: none; align-items: center; gap: 12px; font-size: 13px; flex-shrink: 0; }
+.create-banner.active { display: flex; }
+.create-banner .badge { background: rgba(255,255,255,0.2); padding: 2px 10px; border-radius: 10px; font-size: 11px; font-weight: 600; }
+.create-banner .phase-steps { display: flex; gap: 4px; margin-left: auto; font-size: 12px; }
+.create-banner .phase-step { opacity: 0.6; }
+.create-banner .phase-step.active { opacity: 1; font-weight: 600; }
+.create-banner .phase-step.done { opacity: 0.8; }
+.create-banner .btn-exit { background: rgba(255,255,255,0.15); border: none; color: #fff; padding: 2px 8px; border-radius: 4px; cursor: pointer; font-size: 12px; }
+.create-banner .btn-exit:hover { background: rgba(255,255,255,0.3); }
+
 /* Scrollbar */
 ::-webkit-scrollbar { width: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
@@ -135,7 +156,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; h
       <h1>flow-agent</h1>
       <button class="btn-collapse" onclick="toggleSidebar()" title="折叠侧栏">◀</button>
     </div>
-    <button class="btn-new" onclick="showNewModal()">+ 新建</button>
+    <button class="btn-new" onclick="startCreateWorkflow()">+ 新建</button>
   </div>
   <div class="workflow-list" id="workflowList"></div>
 </div>
@@ -147,6 +168,12 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; h
       <span class="wf-name" id="wfName"></span>
       <button class="btn btn-primary" onclick="runWorkflow()">执行</button>
       <button class="btn btn-code" onclick="toggleCodePanel()">查看代码</button>
+    </div>
+    <div class="create-banner" id="createBanner">
+      <span class="badge">新建模式</span>
+      <span id="createBannerName">Workflow</span>
+      <span class="phase-steps" id="phaseSteps"></span>
+      <button class="btn-exit" onclick="exitCreateMode()">退出</button>
     </div>
     <div class="chat-area" id="chatArea">
       <div class="empty-state" id="emptyState">选择一个 workflow 开始</div>
@@ -179,9 +206,10 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; h
 
 <!-- Progress Modal -->
 <div class="modal-overlay" id="progressModal">
-  <div class="modal" style="width:500px">
+  <div class="modal" style="width:560px">
     <h2>执行中...</h2>
-    <div id="progressPhases" style="margin:12px 0; max-height:300px; overflow-y:auto; font-size:13px; line-height:1.8;"></div>
+    <div id="progressPhases" style="margin:12px 0; max-height:200px; overflow-y:auto; font-size:13px; line-height:1.8;"></div>
+    <div id="progressOutput" style="margin:0 0 12px; padding:8px 12px; background:#0a1628; border:1px solid #0f3460; border-radius:4px; max-height:200px; overflow-y:auto; font-size:12px; font-family:'SF Mono','Menlo','Consolas',monospace; white-space:pre-wrap; word-break:break-all; color:#8ab4f8; display:none;"></div>
     <div class="modal-actions">
       <button class="btn" disabled>请等待</button>
     </div>
@@ -191,11 +219,13 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; h
 <!-- New Workflow Modal -->
 <div class="modal-overlay" id="newModal">
   <div class="modal">
-    <h2>新建 Workflow</h2>
+    <h2 id="newModalTitle">新建 Workflow</h2>
     <label>名称</label>
     <input id="newName" placeholder="my-workflow">
+    <div id="newDescRow">
     <label>描述</label>
     <textarea id="newDesc" placeholder="描述这个 workflow 的功能..."></textarea>
+    </div>
     <div class="modal-actions">
       <button class="btn" onclick="closeNewModal()">取消</button>
       <button class="btn btn-primary" onclick="createWorkflow()">创建</button>
@@ -231,8 +261,164 @@ let codePanelOpen = false;
 let codePanelFiles = [];
 let cpCurrentFile = 'main.js';
 
+// Create mode state
+let createMode = null;
+const CREATE_PHASES = ['requirements', 'design', 'generate', 'review', 'verify'];
+const CREATE_LABELS = { requirements: '需求收集', design: '架构设计', generate: '编码生成', review: '代码审查', verify: '快速验证' };
+
 function escapeHTML(str) {
   return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+// === Create Mode ===
+function showCreateBanner() {
+  const banner = document.getElementById('createBanner');
+  banner.classList.add('active');
+  document.getElementById('createBannerName').textContent = createMode.name;
+  const steps = document.getElementById('phaseSteps');
+  const idx = CREATE_PHASES.indexOf(createMode.phase);
+  steps.innerHTML = CREATE_PHASES.map((p, i) => {
+    let cls = 'phase-step';
+    if (i < idx) cls += ' done';
+    else if (i === idx) cls += ' active';
+    return `<span class="${cls}">${i+1}. ${CREATE_LABELS[p]}</span>`;
+  }).join(' › ');
+}
+
+function hideCreateBanner() {
+  document.getElementById('createBanner').classList.remove('active');
+}
+
+async function startCreateWorkflow() {
+  if (createMode) return;
+  // Use existing modal for name input
+  document.getElementById('newModalTitle').textContent = '新建 Workflow（分步生成）';
+  document.getElementById('newDescRow').style.display = 'none';
+  document.getElementById('newName').value = '';
+  document.getElementById('newModal').classList.add('show');
+  document.getElementById('newName').focus();
+  // Override confirm for create mode
+  window._createModePending = true;
+}
+
+async function startCreateSession() {
+  const name = document.getElementById('newName').value.trim();
+  if (!name) return;
+  document.getElementById('newModal').classList.remove('show');
+  document.getElementById('newName').value = '';
+  document.getElementById('newDescRow').style.display = '';
+  window._createModePending = false;
+
+  createMode = {
+    sessionId: null,
+    phase: 'requirements',
+    name: name,
+    context: {},
+  };
+
+  // Switch to create mode UI
+  document.getElementById('topBar').style.display = 'none';
+  document.getElementById('inputBar').style.display = 'flex';
+  document.getElementById('chatInput').placeholder = '描述你想创建的 workflow...';
+  document.getElementById('chatInput').value = '';
+  document.getElementById('chatInput').disabled = false;
+  document.getElementById('sendBtn').disabled = false;
+  document.getElementById('emptyState').style.display = 'none';
+  document.getElementById('codePanel').style.display = 'none';
+  document.querySelectorAll('.workflow-item').forEach(el => el.classList.remove('active'));
+
+  showCreateBanner();
+
+  // Clear chat area
+  const area = document.getElementById('chatArea');
+  area.innerHTML = '';
+
+  // Immediately create session and get greeting from backend
+  await sendCreateMessage('');
+}
+
+function exitCreateMode() {
+  if (!createMode) return;
+  if (!confirm('确定退出新建模式？未保存的内容将丢失。')) return;
+  createMode = null;
+  hideCreateBanner();
+  document.getElementById('topBar').style.display = 'none';
+  document.getElementById('inputBar').style.display = 'none';
+  document.getElementById('chatInput').placeholder = '输入指令修改 workflow...';
+  document.getElementById('chatArea').innerHTML = '<div class="empty-state" id="emptyState">选择一个 workflow 开始</div>';
+  loadWorkflows();
+}
+
+async function sendCreateMessage(text, thinkingId) {
+  if (!createMode) return;
+
+  try {
+    const body = {
+      sessionId: createMode.sessionId,
+      phase: createMode.phase,
+      name: createMode.name,
+      context: createMode.context,
+    };
+    if (text) body.message = text;
+    const res = await fetch('/api/workflows/create', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Request failed');
+
+    createMode.sessionId = data.sessionId;
+
+    // Show assistant response
+    if (data.message) {
+      appendMessage('assistant', data.message);
+    }
+
+    // Handle status
+    if (data.status === 'approved') {
+      if (data.context) createMode.context = data.context;
+
+      // Advance to next phase
+      const idx = CREATE_PHASES.indexOf(createMode.phase);
+      if (idx < CREATE_PHASES.length - 1) {
+        createMode.phase = CREATE_PHASES[idx + 1];
+        showCreateBanner();
+        // Auto-advance for generate, review, verify
+        if (['generate', 'review', 'verify'].includes(createMode.phase)) {
+          document.getElementById('chatInput').disabled = true;
+          document.getElementById('sendBtn').disabled = true;
+          // Show thinking indicator
+          const thinkingId = 'thinking-' + Date.now();
+          appendThinking(thinkingId, CREATE_LABELS[createMode.phase]);
+          setTimeout(() => sendCreateMessage('[自动开始]', thinkingId), 300);
+        } else {
+          document.getElementById('chatInput').disabled = false;
+          document.getElementById('sendBtn').disabled = false;
+          document.getElementById('chatInput').placeholder = createMode.phase === 'design'
+            ? '请审阅设计方案，输入确认或修改意见...'
+            : '输入...';
+        }
+      } else {
+        // All phases complete
+        appendMessage('assistant', `✅ Workflow "${createMode.name}" 创建完成！\n\n请点击左侧列表查看。`);
+        createMode = null;
+        hideCreateBanner();
+        document.getElementById('topBar').style.display = 'none';
+        document.getElementById('inputBar').style.display = 'none';
+        setTimeout(() => loadWorkflows(), 500);
+      }
+    } else if (data.status === 'cancelled') {
+      appendMessage('assistant', '已取消创建。');
+      exitCreateMode();
+    }
+  } catch (err) {
+    document.getElementById('chatInput').disabled = false;
+    document.getElementById('sendBtn').disabled = false;
+    appendMessage('assistant', `错误：${escapeHTML(err.message)}`);
+  } finally {
+    if (thinkingId) removeThinking(thinkingId);
+  }
 }
 
 // === Sidebar ===
@@ -405,6 +591,9 @@ function appendMessage(role, content, doScroll = true) {
   const empty = document.getElementById('emptyState');
   if (empty) empty.style.display = 'none';
 
+  // Remove any thinking indicators when real messages arrive
+  area.querySelectorAll('.thinking-indicator').forEach(el => el.remove());
+
   // content may be a content block array from tool_use loop; extract text blocks
   if (Array.isArray(content)) {
     // Skip messages that contain tool_use blocks (intermediate assistant responses)
@@ -431,7 +620,34 @@ function appendMessage(role, content, doScroll = true) {
   if (doScroll) area.scrollTop = area.scrollHeight;
 }
 
+function appendThinking(id, label) {
+  const area = document.getElementById('chatArea');
+  const empty = document.getElementById('emptyState');
+  if (empty) empty.style.display = 'none';
+  const div = document.createElement('div');
+  div.className = 'chat-msg assistant thinking-indicator';
+  div.id = id;
+  div.innerHTML = `<span class="thinking-dots"><span>${escapeHTML(label || '处理中')}</span><span class="dot">.</span><span class="dot">.</span><span class="dot">.</span></span>`;
+  area.appendChild(div);
+  area.scrollTop = area.scrollHeight;
+}
+
+function removeThinking(id) {
+  const el = document.getElementById(id);
+  if (el) el.remove();
+}
+
 async function sendMessage() {
+  if (createMode) {
+    const input = document.getElementById('chatInput');
+    const text = input.value.trim();
+    if (!text) return;
+    input.value = '';
+    appendMessage('user', text);
+    await sendCreateMessage(text);
+    return;
+  }
+
   const input = document.getElementById('chatInput');
   const btn = document.getElementById('sendBtn');
   const text = input.value.trim();
@@ -476,7 +692,10 @@ async function runWorkflow() {
   // Show progress modal
   const modal = document.getElementById('progressModal');
   const phasesEl = document.getElementById('progressPhases');
+  const outputEl = document.getElementById('progressOutput');
   phasesEl.innerHTML = '';
+  outputEl.innerHTML = '';
+  outputEl.style.display = 'none';
   modal.classList.add('show');
 
   try {
@@ -512,6 +731,10 @@ async function runWorkflow() {
             resultText = data;
             // Mark all phases as failed
             phasesEl.querySelectorAll('.spinner').forEach(s => { s.textContent = '✗'; s.style.animation = 'none'; });
+          } else if (lastEvent === 'output') {
+            outputEl.style.display = 'block';
+            outputEl.textContent += data;
+            outputEl.scrollTop = outputEl.scrollHeight;
           }
         }
       }
@@ -537,9 +760,15 @@ function closeNewModal() {
   document.getElementById('newModal').classList.remove('show');
   document.getElementById('newName').value = '';
   document.getElementById('newDesc').value = '';
+  document.getElementById('newDescRow').style.display = '';
+  window._createModePending = false;
 }
 
 async function createWorkflow() {
+  if (window._createModePending) {
+    await startCreateSession();
+    return;
+  }
   const name = document.getElementById('newName').value.trim();
   const desc = document.getElementById('newDesc').value.trim();
   if (!name || !desc) return;
@@ -592,9 +821,8 @@ function doHighlight() {
 
 function syncCpScroll() {
   const textarea = document.getElementById('cpContent');
-  const pre = document.querySelector('#cpHighlight').parentElement;
-  pre.scrollTop = textarea.scrollTop;
-  pre.scrollLeft = textarea.scrollLeft;
+  const code = document.getElementById('cpHighlight');
+  code.style.transform = `translate(${-textarea.scrollLeft}px, ${-textarea.scrollTop}px)`;
 }
 
 async function loadCpFile(filePath) {

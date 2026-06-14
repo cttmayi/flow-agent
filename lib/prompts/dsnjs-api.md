@@ -10,10 +10,11 @@
 
 ## API 说明
 
-- tool(name, params) — 直接执行已注册的工具，不经过 LLM。name 是工具名称（如 "bash"、"read"、"write"），params 是工具参数对象。返回工具执行结果。
+- tool(name, params) — 直接执行已注册的工具，不经过 LLM。name 是工具名称（如 "bash"、"read"、"write"），params 是工具参数对象。返回工具执行结果对象。
   - 相比 agent()，tool() 没有 LLM 开销，适合确定性操作（读文件、执行命令等）。
-  - 示例：`const files = await tool("bash", { command: "ls src/" });`
-  - 示例：`const content = await tool("read", { path: "config.json" });`
+  - **返回值格式：** 每个工具返回不同的对象结构（read 返回 `{ content, error }`，bash 返回 `{ stdout, stderr, exitCode }` 等）。必须通过属性访问结果，如 `result.content`、`result.stdout`。
+  - 示例：`const out = await tool("bash", { command: "ls src/" }); const files = out.stdout.trim();`
+  - 示例：`const f = await tool("read", { path: "config.json" }); const cfg = JSON.parse(f.content);`
 - agent(prompt, opts?) — 调用 AI agent，返回文本结果。opts 可指定 model、tools（工具名称数组）、timeout、format。
   - model 只能省略（使用默认模型）或设为有效的 claude 模型（如 claude-sonnet-4-20250514），禁止设为不存在的模型名。
   - format 控制返回值格式。可选值：

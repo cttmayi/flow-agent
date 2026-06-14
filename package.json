@@ -5,7 +5,7 @@
   "type": "module",
   "main": "runtime.js",
   "bin": {
-    "flow-agent": "./cli.js"
+    "flow-agent": "cli.js"
   },
   "scripts": {
     "test": "node --test tests/*.test.js"
@@ -14,5 +14,22 @@
     "@anthropic-ai/sdk": "^0.39.0",
     "highlight.js": "^11.11.1",
     "marked": "^18.0.5"
-  }
+  },
+  "directories": {
+    "doc": "docs",
+    "lib": "lib",
+    "test": "tests"
+  },
+  "devDependencies": {},
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/cttmayi/flow-agent.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/cttmayi/flow-agent/issues"
+  },
+  "homepage": "https://github.com/cttmayi/flow-agent#readme"
 }

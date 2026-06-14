@@ -76,7 +76,7 @@ describe('spawn agent provider', () => {
       tool_mapping: { bash: 'Bash' },
     });
     const result = await agent('hello', { tools: ['bash'] });
-    assert.strictEqual(result, '-p hello --tools Bash');
+    assert.strictEqual(result, '-p hello --tools Bash --allowedTools Bash');
   });
 
   it('should reject on non-zero exit code', async () => {

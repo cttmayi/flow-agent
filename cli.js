@@ -4,6 +4,14 @@ import { createEngine } from './lib/engine.js';
 import { createServer_ } from './lib/serve.js';
 import { logger } from './lib/logger.js';
 
+// Prevent unhandled rejections from crashing the process
+process.on('unhandledRejection', (err) => {
+  console.error('[unhandledRejection]', err instanceof Error ? err.message : err);
+});
+process.on('uncaughtException', (err) => {
+  console.error('[uncaughtException]', err.message);
+});
+
 async function main() {
   const engine = await createEngine();
 
@@ -51,7 +59,7 @@ async function main() {
 
   if (command === 'serve') {
     const portArg = args[0] ? parseInt(args[0], 10) : undefined;
-    const server = await createServer_({ port: portArg });
+    await createServer_({ port: portArg });
     // Keep running until SIGINT
     await new Promise(() => {});
     return;

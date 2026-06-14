@@ -37,23 +37,42 @@ const reviewPrompt = require('./prompts/code-review.txt');
 
 ## tool() 直接调用
 
-`tool(name, params)` 可以直接执行工具，不经过 LLM，适合确定性操作：
+`tool(name, params)` 可以直接执行工具，不经过 LLM，适合确定性操作。
+
+**返回值格式：** tool() 返回对象，包含工具执行结果：
+
+| 工具 | 返回值 |
+|------|--------|
+| `read` | `{ content: string\|null, error: string\|null }` |
+| `bash` | `{ stdout: string, stderr: string, exitCode: number }` |
+| `write` | `{ content: string\|null, error: string\|null }` |
+| `edit` | `{ path, backupPath, results, changes, summary }` |
+
+**必须通过属性访问结果内容，** 不要直接对返回值调用 .trim() 等方法：
 
 ```js
-// 直接读取文件，不需要 LLM
-const pkg = JSON.parse(await tool("read", { path: "package.json" }));
+// ✅ 正确：读取文件
+const file = await tool("read", { path: "package.json" });
+const pkg = JSON.parse(file.content);
 
-// 直接执行命令
-const files = await tool("bash", { command: "ls src/" });
+// ✅ 正确：执行命令
+const cmd = await tool("bash", { command: "ls src/" });
+const files = cmd.stdout.trim();
+
+// ✅ 正确：检查错误
+if (file.error) throw new Error(file.error);
 
 // 结合条件判断
 if (files.includes("bug.js")) {
-  // 只有复杂任务才用 agent
   await agent("修复 bug.js", { tools: ["read", "write"] });
 }
 ```
 
-可用的工具名称：bash（执行命令）、read（读文件）、write（写文件）。
+可用的工具名称：bash（执行命令）、read（读文件）、write（写文件）、edit（精确字符串替换编辑文件）。
+
+## 模型使用规则
+
+不要猜测或指定 agent() 调用的 model 参数。除非用户需求中明确指明了要使用的模型名称，否则不要传 model 参数（使用默认模型）。禁止捏造不存在的模型名。
 
 ## agent() 的 format 选项
 

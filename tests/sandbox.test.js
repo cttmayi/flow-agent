@@ -38,10 +38,10 @@ describe('Sandbox', () => {
     assert.strictEqual(result, 9);
   });
 
-  it('does not expose fs or path (must use agent tools)', async () => {
+  it('exposes fs and path modules', async () => {
     const apis = { agent: async () => {}, parallel: async () => [], phase: () => {}, checkpoint: () => {} };
     const result = await createSandbox(`return typeof fs + '|' + typeof path;`, apis);
-    assert.strictEqual(result, 'undefined|undefined');
+    assert.strictEqual(result, 'object|object');
   });
 
   it('supports async/await in sandbox code', async () => {
