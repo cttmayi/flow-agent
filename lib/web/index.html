@@ -473,8 +473,8 @@ async function loadWorkflows() {
       if (w.source === 'global') {
         const src = document.createElement('span');
         src.className = 'wf-source';
-        src.textContent = w.overridden ? '全局(覆盖)' : '全局';
-        if (w.overridden) src.style.color = '#888';
+        src.textContent = '全局';
+        if (w.overridden) src.style.color = '#555';
         item.appendChild(src);
       }
 
