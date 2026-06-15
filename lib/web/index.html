@@ -289,6 +289,13 @@ function hideCreateBanner() {
 
 async function startCreateWorkflow() {
   if (createMode) return;
+  // Deselect current workflow to prevent loadMessages race condition
+  activeWorkflow = null;
+  loadingMessages = ''; // cancel any in-flight loadMessages
+  document.querySelectorAll('.workflow-item').forEach(el => el.classList.remove('active'));
+  document.getElementById('topBar').style.display = 'none';
+  document.getElementById('inputBar').style.display = 'none';
+  document.getElementById('chatArea').innerHTML = '<div class="empty-state" id="emptyState">选择一个 workflow 开始</div>';
   // Use existing modal for name input
   document.getElementById('newModalTitle').textContent = '新建 Workflow（分步生成）';
   document.getElementById('newDescRow').style.display = 'none';
@@ -314,6 +321,10 @@ async function startCreateSession() {
     context: {},
   };
 
+  // Prevent stale loadMessages from a previously selected workflow
+  // from overwriting the chat area after we've entered create mode
+  loadingMessages = '__create__';
+
   // Switch to create mode UI
   document.getElementById('topBar').style.display = 'none';
   document.getElementById('inputBar').style.display = 'flex';
@@ -331,7 +342,7 @@ async function startCreateSession() {
   const area = document.getElementById('chatArea');
   area.innerHTML = '';
 
-  // Immediately create session and get greeting from backend
+  // Create session (API returns the greeting)
   await sendCreateMessage('');
 }
 
@@ -342,6 +353,7 @@ function exitCreateMode() {
   hideCreateBanner();
   document.getElementById('topBar').style.display = 'none';
   document.getElementById('inputBar').style.display = 'none';
+  document.getElementById('codePanel').style.display = '';
   document.getElementById('chatInput').placeholder = '输入指令修改 workflow...';
   document.getElementById('chatArea').innerHTML = '<div class="empty-state" id="emptyState">选择一个 workflow 开始</div>';
   loadWorkflows();
