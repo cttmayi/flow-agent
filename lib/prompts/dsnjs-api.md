@@ -30,8 +30,10 @@
 - parallel(tasks, opts?) — 并行执行 async 函数数组。opts 支持 concurrency（默认 5）和 failFast（默认 true）。
 - phase(name) — 标记工作流阶段，仅用于日志输出。
 - checkpoint(key, value?) — 一个参数读取缓存；两个参数写入缓存并返回值。
-- args — 工作流执行时传入的字符串参数（通过聊天输入框中斜杠命令 `/workflow名称 参数...` 传入）。如果没有参数则为空字符串 `""`。
-  - 示例：输入 `/translate Hello world` 执行时，workflow 中 `args === "Hello world"`。
+- args — 全局字符串变量，工作流执行时传入的参数（通过聊天输入框中斜杠命令 `/workflow名称 参数...` 传入）。如果没有参数则为空字符串 `""`。
+  - ⚠️ args 已经是全局变量，直接使用，禁止 `const args =` 或 `let args =` 重复声明。
+  - 示例：输入 `/translate Hello world` 执行时，workflow 中直接访问 `args` 值为 `"Hello world"`。
+  - 典型用法：`await agent(\`翻译以下内容：${args}\`, { tools: ['bash'] })`
 - require(modulePath) — 加载同一 workflow 目录下的本地模块。modulePath 必须是相对路径。
   - 加载 `.js` 文件，在同一沙箱上下文中执行。
   - 加载 `.json` 文件，返回 parsed 对象。
