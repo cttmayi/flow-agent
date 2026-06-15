@@ -1,8 +1,11 @@
 #!/usr/bin/env node
 // cli.js — CLI 入口，薄层封装
+import { readFileSync } from 'node:fs';
 import { createEngine } from './lib/engine.js';
 import { createServer_ } from './lib/serve.js';
 import { logger } from './lib/logger.js';
+
+const pkg = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
 
 process.on('unhandledRejection', (err) => {
   console.error('[unhandledRejection]', err instanceof Error ? err.message : err);
@@ -13,6 +16,12 @@ process.on('uncaughtException', (err) => {
 
 async function main() {
   const [, , ...args] = process.argv;
+
+  // flow-agent --version | -v
+  if (args.includes('--version') || args.includes('-v')) {
+    console.log(pkg.version);
+    return;
+  }
 
   // flow-agent run <name>
   if (args[0] === 'run') {
