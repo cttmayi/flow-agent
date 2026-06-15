@@ -5,7 +5,7 @@ import { createEngine } from './lib/engine.js';
 import { createServer_ } from './lib/serve.js';
 import { logger } from './lib/logger.js';
 
-const pkg = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
+const pkg = JSON.parse(readFileSync(new URL('./package.json', import.meta.url), 'utf8'));
 
 process.on('unhandledRejection', (err) => {
   console.error('[unhandledRejection]', err instanceof Error ? err.message : err);
