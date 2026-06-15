@@ -461,8 +461,9 @@ async function loadWorkflows() {
     list.appendChild(groupLabel);
     for (const w of items) {
       const item = document.createElement('div');
-      item.className = 'workflow-item' + (w.name === activeWorkflow ? ' active' : '');
+      item.className = 'workflow-item' + (w.name === activeWorkflow?.name && w.source === activeWorkflow?.source ? ' active' : '');
       item.dataset.name = w.name;
+      item.dataset.source = w.source;
 
       const nameSpan = document.createElement('span');
       nameSpan.className = 'wf-name-text';
@@ -514,7 +515,7 @@ async function loadWorkflows() {
           async () => {
             try {
               await api(`/api/workflows/${encodeURIComponent(w.name)}`, { method: 'DELETE' });
-              if (activeWorkflow === w.name) selectWorkflow(null);
+              if (activeWorkflow?.name === w.name) selectWorkflow(null);
               await loadWorkflows();
               showToast(`已删除 "${w.name}"`, 'success');
             } catch (err) {
@@ -525,7 +526,7 @@ async function loadWorkflows() {
       });
       item.appendChild(delBtn);
 
-      item.addEventListener('click', () => selectWorkflow(w.name));
+      item.addEventListener('click', () => selectWorkflow(w.name, w.source));
       list.appendChild(item);
     }
   }
@@ -534,8 +535,8 @@ async function loadWorkflows() {
   addGroup('全局', globalItems);
 }
 
-async function selectWorkflow(name) {
-  activeWorkflow = name;
+async function selectWorkflow(name, source) {
+  activeWorkflow = { name, source };
   if (!name) {
     document.getElementById('topBar').style.display = 'none';
     document.getElementById('inputBar').style.display = 'none';
@@ -545,7 +546,7 @@ async function selectWorkflow(name) {
   loadingMessages = name;
   document.querySelectorAll('.workflow-item').forEach(el => el.classList.remove('active'));
   document.querySelectorAll('.workflow-item').forEach(el => {
-    if (el.dataset.name === name) el.classList.add('active');
+    if (el.dataset.name === name && el.dataset.source === source) el.classList.add('active');
   });
   document.getElementById('topBar').style.display = 'flex';
   document.getElementById('inputBar').style.display = 'flex';
@@ -667,7 +668,7 @@ async function sendMessage() {
   modal.classList.add('show');
 
   try {
-    const res = await fetch(`/api/workflows/${encodeURIComponent(activeWorkflow)}/chat`, {
+    const res = await fetch(`/api/workflows/${encodeURIComponent(activeWorkflow.name)}/chat`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ message: text }),
@@ -746,7 +747,7 @@ async function runWorkflow() {
   loadingRun = true;
   document.getElementById('sendBtn').disabled = true;
 
-  appendMessage('user', `执行 workflow "${activeWorkflow}"`);
+  appendMessage('user', `执行 workflow "${activeWorkflow.name}"`);
 
   // Show progress modal
   const modal = document.getElementById('progressModal');
@@ -758,7 +759,7 @@ async function runWorkflow() {
   modal.classList.add('show');
 
   try {
-    const res = await fetch(`/api/workflows/${encodeURIComponent(activeWorkflow)}/run`, { method: 'POST' });
+    const res = await fetch(`/api/workflows/${encodeURIComponent(activeWorkflow.name)}/run`, { method: 'POST' });
     const reader = res.body.getReader();
     const decoder = new TextDecoder();
     let buffer = '';
@@ -891,10 +892,10 @@ async function loadCpFile(filePath) {
   try {
     let content;
     if (codePanelFiles.length > 0) {
-      const data = await api(`/api/workflows/${encodeURIComponent(activeWorkflow)}/file/${filePath}`);
+      const data = await api(`/api/workflows/${encodeURIComponent(activeWorkflow.name)}/file/${filePath}`);
       content = data.content;
     } else {
-      const data = await api(`/api/workflows/${encodeURIComponent(activeWorkflow)}`);
+      const data = await api(`/api/workflows/${encodeURIComponent(activeWorkflow.name)}`);
       content = data.code;
     }
     textarea.value = content;
@@ -946,12 +947,12 @@ async function saveCpFile() {
   const saveBtn = document.getElementById('cpSaveBtn');
   try {
     if (codePanelFiles.length > 0) {
-      await api(`/api/workflows/${encodeURIComponent(activeWorkflow)}/file/${cpCurrentFile}`, {
+      await api(`/api/workflows/${encodeURIComponent(activeWorkflow.name)}/file/${cpCurrentFile}`, {
         method: 'PUT',
         body: JSON.stringify({ content }),
       });
     } else {
-      await api(`/api/workflows/${encodeURIComponent(activeWorkflow)}`, {
+      await api(`/api/workflows/${encodeURIComponent(activeWorkflow.name)}`, {
         method: 'PUT',
         body: JSON.stringify({ code: content }),
       });
@@ -969,7 +970,7 @@ async function saveCpFile() {
 async function populateCpFileList() {
   const list = document.getElementById('cpFileList');
   try {
-    const data = await api(`/api/workflows/${encodeURIComponent(activeWorkflow)}/files`);
+    const data = await api(`/api/workflows/${encodeURIComponent(activeWorkflow.name)}/files`);
     codePanelFiles = data.files || [];
   } catch {
     codePanelFiles = [];
