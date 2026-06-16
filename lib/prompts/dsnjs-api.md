@@ -17,8 +17,9 @@
   - **返回值格式：** 每个工具返回不同的对象结构（read 返回 `{ content, error }`，bash 返回 `{ stdout, stderr, exitCode }` 等）。必须通过属性访问结果，如 `result.content`、`result.stdout`。
   - 示例：`const out = await tool("bash", { command: "ls src/" }); const files = out.stdout.trim();`
   - 示例：`const f = await tool("read", { path: "config.json" }); const cfg = JSON.parse(f.content);`
-- agent(prompt, opts?) — 调用 AI agent，返回文本结果。opts 可指定 model、tools（工具名称数组）、timeout、format。
+- agent(prompt, opts?) — 调用 AI agent，返回文本结果。opts 可指定 model、tools（工具名称数组）、timeout、format、maxTokens。
   - model 只能省略（使用默认模型）或设为有效的 claude 模型（如 claude-sonnet-4-20250514），禁止设为不存在的模型名。
+  - maxTokens 控制生成的最大 token 数，默认 65536（64K）。可通过配置文件 default_max_tokens 全局修改。
   - format 控制返回值格式。可选值：
     - 不传或 "text"（默认）— 返回原始文本
     - "json" — 返回解析后的 JSON 对象/数组。LLM 输出不是合法 JSON 时会自动重试（最多 3 次）。示例：

@@ -18,3 +18,7 @@ default_timeout: 120000
 
 # 默认 agent 提供者："internal"（内置 SDK）或 "claude"、"codex" 等内置 agent
 default_agent: "internal"
+
+# 默认 max_tokens（默认 65536 = 64K）
+# agent() 未指定 maxTokens 时使用
+default_max_tokens: 65536

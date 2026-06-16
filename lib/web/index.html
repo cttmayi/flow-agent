@@ -261,6 +261,7 @@ let cpCurrentFile = 'main.js';
 
 // Create mode state
 let createMode = null;
+let createMessageLog = [];
 const CREATE_PHASES = ['requirements', 'design', 'generate', 'review', 'verify'];
 const CREATE_LABELS = { requirements: '需求收集', design: '架构设计', generate: '编码生成', review: '代码审查', verify: '快速验证' };
 
@@ -285,6 +286,34 @@ function showCreateBanner() {
 
 function hideCreateBanner() {
   document.getElementById('createBanner').classList.remove('active');
+}
+
+function saveCreateState() {
+  try {
+    sessionStorage.setItem('faCreateMode', JSON.stringify({
+      sessionId: createMode?.sessionId,
+      phase: createMode?.phase,
+      name: createMode?.name,
+      context: createMode?.context,
+    }));
+    sessionStorage.setItem('faCreateLog', JSON.stringify(createMessageLog.slice(-50)));
+  } catch { /* quota exceeded, ignore */ }
+}
+
+function clearCreateState() {
+  sessionStorage.removeItem('faCreateMode');
+  sessionStorage.removeItem('faCreateLog');
+}
+
+function restoreCreateState() {
+  try {
+    const saved = sessionStorage.getItem('faCreateMode');
+    if (!saved) return false;
+    const parsed = JSON.parse(saved);
+    if (!parsed || !parsed.sessionId) { clearCreateState(); return false; }
+    createMode = { sessionId: parsed.sessionId, phase: parsed.phase, name: parsed.name, context: parsed.context || {} };
+    return true;
+  } catch { clearCreateState(); return false; }
 }
 
 async function startCreateWorkflow() {
@@ -320,6 +349,8 @@ async function startCreateSession() {
     name: name,
     context: {},
   };
+  createMessageLog = [];
+  clearCreateState();
 
   // Prevent stale loadMessages from a previously selected workflow
   // from overwriting the chat area after we've entered create mode
@@ -349,7 +380,9 @@ async function startCreateSession() {
 function exitCreateMode() {
   if (!createMode) return;
   if (!confirm('确定退出新建模式？未保存的内容将丢失。')) return;
+  clearCreateState();
   createMode = null;
+  createMessageLog = [];
   hideCreateBanner();
   document.getElementById('topBar').style.display = 'none';
   document.getElementById('inputBar').style.display = 'none';
@@ -369,7 +402,10 @@ async function sendCreateMessage(text, thinkingId) {
       name: createMode.name,
       context: createMode.context,
     };
-    if (text) body.message = text;
+    if (text) {
+      body.message = text;
+      createMessageLog.push({ role: 'user', text });
+    }
     const res = await fetch('/api/workflows/create', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -382,8 +418,10 @@ async function sendCreateMessage(text, thinkingId) {
 
     // Show assistant response
     if (data.message) {
+      createMessageLog.push({ role: 'assistant', text: data.message });
       appendMessage('assistant', data.message);
     }
+    saveCreateState();
 
     // Handle status
     if (data.status === 'approved') {
@@ -393,6 +431,7 @@ async function sendCreateMessage(text, thinkingId) {
       const idx = CREATE_PHASES.indexOf(createMode.phase);
       if (idx < CREATE_PHASES.length - 1) {
         createMode.phase = CREATE_PHASES[idx + 1];
+        saveCreateState();
         showCreateBanner();
         // Auto-advance for generate, review, verify
         if (['generate', 'review', 'verify'].includes(createMode.phase)) {
@@ -412,7 +451,9 @@ async function sendCreateMessage(text, thinkingId) {
       } else {
         // All phases complete
         appendMessage('assistant', `✅ Workflow "${createMode.name}" 创建完成！\n\n请点击左侧列表查看。`);
+        clearCreateState();
         createMode = null;
+        createMessageLog = [];
         hideCreateBanner();
         document.getElementById('topBar').style.display = 'none';
         document.getElementById('inputBar').style.display = 'none';
@@ -420,6 +461,9 @@ async function sendCreateMessage(text, thinkingId) {
       }
     } else if (data.status === 'cancelled') {
       appendMessage('assistant', '已取消创建。');
+      clearCreateState();
+      createMode = null;
+      createMessageLog = [];
       exitCreateMode();
     }
   } catch (err) {
@@ -1272,7 +1316,41 @@ divider.addEventListener('mousedown', function(e) {
 });
 
 // === Init ===
-loadWorkflows();
+if (restoreCreateState()) {
+  // Restore create mode UI after page refresh
+  document.getElementById('topBar').style.display = 'none';
+  document.getElementById('inputBar').style.display = 'flex';
+  document.getElementById('chatInput').placeholder = '输入...';
+  document.getElementById('chatInput').disabled = false;
+  document.getElementById('sendBtn').disabled = false;
+  document.getElementById('emptyState').style.display = 'none';
+  document.getElementById('codePanel').style.display = 'none';
+  showCreateBanner();
+
+  // Restore messages
+  const area = document.getElementById('chatArea');
+  area.innerHTML = '';
+  try {
+    const saved = sessionStorage.getItem('faCreateLog');
+    if (saved) {
+      createMessageLog = JSON.parse(saved);
+      for (const msg of createMessageLog) {
+        appendMessage(msg.role, msg.text);
+      }
+    }
+  } catch { createMessageLog = []; }
+
+  // Re-trigger auto-advance phases (generate/review/verify)
+  if (['generate', 'review', 'verify'].includes(createMode.phase)) {
+    document.getElementById('chatInput').disabled = true;
+    document.getElementById('sendBtn').disabled = true;
+    const thinkingId = 'thinking-' + Date.now();
+    appendThinking(thinkingId, CREATE_LABELS[createMode.phase]);
+    setTimeout(() => sendCreateMessage('[自动开始]', thinkingId), 300);
+  }
+} else {
+  loadWorkflows();
+}
 </script>
 </body>
 </html>
