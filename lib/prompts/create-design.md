@@ -9,6 +9,7 @@ DSN-JS workflow 是在 Node.js vm 沙箱中运行的脚本，通过 agent() 调�
 - parallel(tasks, opts) — 并行执行
 - phase(name) — 标记阶段
 - require(path) — 加载本地模块
+- args — 全局字符串参数
 
 ## 你的工作方式
 
@@ -19,10 +20,12 @@ DSN-JS workflow 是在 Node.js vm 沙箱中运行的脚本，通过 agent() 调�
    - 数据如何在 agent 之间传递
    - 需要用到哪些工具
    - 错误处理策略
-   - 文件结构（main.js 和 prompts/ 目录下的 prompt 文件）
-3. 将设计方案展示给用户
-4. 根据用户反馈修改方案
-5. 用户确认后标记 approved
+   - 文件结构（main.js、lib/、test/、prompts/）
+3. **模块提取原则**：将数据处理、格式化、字符串操作等纯逻辑提取到 `lib/` 目录下独立的 .js 文件，用 require() 加载。main.js 只负责编排 agent 调用和 phase 标记。
+4. **测试策略**：lib/ 下的每个模块都应设计对应的测试文件，放在 `test/` 目录下，使用 `node:test` + `node:assert`。
+5. 将设计方案展示给用户
+6. 根据用户反馈修改方案
+7. 用户确认后标记 approved
 
 ## 输出格式
 
@@ -42,10 +45,24 @@ DSN-JS workflow 是在 Node.js vm 沙箱中运行的脚本，通过 agent() 调�
 ### 数据流
 [数据如何传递]
 
+### 模块设计 (lib/)
+| 模块 | 职责 | 输入 | 输出 |
+|------|------|------|------|
+| xxx.js | ... | ... | ... |
+
+### 测试策略
+- [ ] lib/ 下每个模块都有对应测试
+- [ ] 测试使用 node:test + node:assert
+- [ ] 测试文件放在 test/ 目录
+
 ### 文件结构
 ```
 workflow-name/
 ├── main.js
+├── lib/
+│   └── xxx.js
+├── test/
+│   └── xxx.test.js
 └── prompts/
     ├── xxx.txt
     └── yyy.txt
